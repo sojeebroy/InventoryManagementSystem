@@ -1,0 +1,82 @@
+@using Inventory_Management_System.Models.DTOs
+@model CreateInventoryDto
+@{
+    ViewData["Title"] = "Create Inventory";
+}
+
+<div class="container-main">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1>Create New Inventory</h1>
+
+            <form asp-action="Create" method="post" class="mt-4">
+                <div asp-validation-summary="All" class="alert alert-danger d-none"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label"></label>
+                    <input asp-for="Title" class="form-control form-control-lg" placeholder="Enter inventory title" required>
+                    <span asp-validation-for="Title" class="invalid-feedback"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="4" placeholder="Description (supports Markdown)"></textarea>
+                    <span asp-validation-for="Description" class="invalid-feedback"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Category" class="form-label"></label>
+                        <select asp-for="Category" class="form-select">
+                            <option value="">Select a category</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Books">Books</option>
+                            <option value="Clothing">Clothing</option>
+                            <option value="Food">Food</option>
+                            <option value="Tools">Tools</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="VisibilityType" class="form-label"></label>
+                        <select asp-for="VisibilityType" class="form-select">
+                            <option value="Private">Private</option>
+                            <option value="Public">Public</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ImageUrl" class="form-label"></label>
+                    <input asp-for="ImageUrl" class="form-control" placeholder="Image URL (cloud storage)" type="url">
+                    <span asp-validation-for="ImageUrl" class="invalid-feedback"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Tags</label>
+                    <input type="text" id="tagsInput" class="form-control" placeholder="Enter tags separated by commas">
+                    <small class="text-muted">Add tags to help users find your inventory</small>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Create Inventory</button>
+                    <a href="/Inventories" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Form validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function (e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    </script>
+}

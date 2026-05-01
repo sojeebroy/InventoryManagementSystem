@@ -1,0 +1,82 @@
+@using Inventory_Management_System.Models.DTOs
+@model Inventory
+@{
+    ViewData["Title"] = "Edit - " + Model.Title;
+}
+
+<div class="container-main">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1>Edit Inventory</h1>
+
+            <form asp-action="Edit" method="post" class="mt-4">
+                <input type="hidden" name="Id" value="@Model.Id" />
+                <input type="hidden" name="Version" value="@Model.Version" />
+
+                <div asp-validation-summary="All" class="alert alert-danger d-none"></div>
+
+                <div class="mb-3">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-control form-control-lg" name="Title" value="@Model.Title" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" name="Description" rows="4">@Model.Description</textarea>
+                    <small class="text-muted">Supports Markdown</small>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Category</label>
+                        <select name="Category" class="form-select">
+                            <option selected>Select a category</option>
+                            @foreach (var cat in new[] { "Electronics", "Books", "Clothing", "Food", "Tools", "Other" })
+                            {
+                                <option value="@cat" selected="@(Model.Category == cat)">@cat</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Visibility</label>
+                        <select name="VisibilityType" class="form-select">
+                            <option value="Private" selected="@(Model.Visibility == VisibilityType.Private)">Private</option>
+                            <option value="Public" selected="@(Model.Visibility == VisibilityType.Public)">Public</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Image URL</label>
+                    <input type="url" class="form-control" name="ImageUrl" value="@Model.ImageUrl">
+                    <small class="text-muted">Cloud storage URL (e.g., Azure Blob)</small>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <div class="mb-3">
+                        <img src="@Model.ImageUrl" class="img-fluid" style="max-height: 200px;" />
+                    </div>
+                }
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Update Inventory</button>
+                    <a href="/Inventories/Details/@Model.Id" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function (e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    </script>
+}

@@ -1,0 +1,131 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var ownedInventories = (List<Inventory>)ViewBag.OwnedInventories;
+    var accessibleInventories = (List<Inventory>)ViewBag.AccessibleInventories;
+}
+
+<div class="container-main">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>My Dashboard</h1>
+            <p class="text-muted">Manage your inventories and items</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/Inventories/Create" class="btn btn-primary">+ Create New Inventory</a>
+        </div>
+    </div>
+
+    <!-- Owned Inventories Section -->
+    <div class="mb-5">
+        <h2 class="mb-3">My Inventories <span class="badge bg-primary">@ownedInventories.Count</span></h2>
+
+        @if (!ownedInventories.Any())
+        {
+            <div class="card">
+                <div class="card-body empty-state">
+                    <p class="text-muted">No inventories created yet</p>
+                    <a href="/Inventories/Create" class="btn btn-primary">Create Your First Inventory</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive-custom">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Items</th>
+                            <th>Visibility</th>
+                            <th>Created</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var inventory in ownedInventories)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@inventory.Title</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@inventory.Items.Count items</span>
+                                </td>
+                                <td>
+                                    @if (inventory.Visibility == Inventory_Management_System.Models.VisibilityType.Public)
+                                    {
+                                        <span class="badge bg-success">Public</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">Private</span>
+                                    }
+                                </td>
+                                <td>
+                                    <small>@inventory.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                </td>
+                                <td class="text-end">
+                                    <a href="/Inventories/Details/@inventory.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                    <a href="/Inventories/Edit/@inventory.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                    <a href="/Inventories/Settings/@inventory.Id" class="btn btn-sm btn-outline-info">Settings</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <!-- Accessible Inventories Section -->
+    <div>
+        <h2 class="mb-3">Inventories I Can Access <span class="badge bg-info">@accessibleInventories.Count</span></h2>
+
+        @if (!accessibleInventories.Any())
+        {
+            <div class="card">
+                <div class="card-body empty-state">
+                    <p class="text-muted">No shared inventories yet</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive-custom">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Owner</th>
+                            <th>Items</th>
+                            <th>Created</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var inventory in accessibleInventories)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@inventory.Title</strong>
+                                </td>
+                                <td>
+                                    <small>@inventory.Owner?.UserName</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@inventory.Items.Count items</span>
+                                </td>
+                                <td>
+                                    <small>@inventory.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                </td>
+                                <td class="text-end">
+                                    <a href="/Inventories/Details/@inventory.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

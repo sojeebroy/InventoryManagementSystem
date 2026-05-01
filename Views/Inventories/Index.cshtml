@@ -1,0 +1,84 @@
+@model List<Inventory>
+@{
+    ViewData["Title"] = "Inventories";
+}
+
+<div class="container-main">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Inventories</h1>
+        </div>
+        @if (User.Identity?.IsAuthenticated ?? false)
+        {
+            <div class="col-md-4 text-end">
+                <a href="/Inventories/Create" class="btn btn-primary">+ Create New Inventory</a>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="card">
+            <div class="card-body empty-state">
+                <h5 class="mb-3">No inventories found</h5>
+                <p class="text-muted">
+                    @if (string.IsNullOrEmpty(ViewBag.SearchTerm))
+                    {
+                        <span>@(User.Identity?.IsAuthenticated ?? false ? "Create one to get started!" : "Login to create an inventory.")</span>
+                    }
+                    else
+                    {
+                        <span>Try adjusting your search terms.</span>
+                    }
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive-custom">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Created</th>
+                        <th>Visibility</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var inventory in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@inventory.Title</strong>
+                                <br>
+                                <small class="text-muted">@inventory.Description?.Substring(0, Math.Min(50, inventory.Description.Length))...</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">@inventory.Category</span>
+                            </td>
+                            <td>
+                                <small>@inventory.CreatedAt.ToString("MMM dd, yyyy")</small>
+                            </td>
+                            <td>
+                                @if (inventory.Visibility == Inventory_Management_System.Models.VisibilityType.Public)
+                                {
+                                    <span class="badge bg-success">Public</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning">Private</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <a href="/Inventories/Details/@inventory.Id" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

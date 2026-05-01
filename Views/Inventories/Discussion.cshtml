@@ -1,0 +1,80 @@
+@model List<Discussion>
+@{
+    var inventory = (Inventory)ViewBag.Inventory;
+    var canAdd = (bool)ViewBag.CanAdd;
+    var userId = (string)ViewBag.UserId;
+}
+
+@if (canAdd)
+{
+    <div class="mb-3">
+        <form id="discussionForm">
+            <div class="input-group">
+                <textarea id="discussionContent" class="form-control" placeholder="Share your thoughts..." rows="2" required></textarea>
+                <button type="button" class="btn btn-primary" id="postDiscussionBtn">Post</button>
+            </div>
+            <small class="text-muted">Markdown is supported</small>
+        </form>
+    </div>
+}
+
+<div id="discussionsList" class="discussion-container">
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <p class="text-muted">No discussions yet. Be the first to share!</p>
+        </div>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var discussion in Model)
+            {
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">@discussion.User?.UserName</h6>
+                            <p class="mb-0">@Html.Raw(MarkdownHelper.ToHtml(discussion.Content))</p>
+                        </div>
+                        <small class="text-muted">@discussion.CreatedAt.ToString("MMM dd, HH:mm")</small>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        const inventoryId = @inventory.Id;
+
+        document.getElementById('postDiscussionBtn')?.addEventListener('click', async () => {
+            const content = document.getElementById('discussionContent').value;
+            if (!content.trim()) return;
+
+            try {
+                const response = await fetch('/api/discussions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ inventoryId, content })
+                });
+
+                if (response.ok) {
+                    document.getElementById('discussionContent').value = '';
+                    // Reload discussions
+                    location.reload();
+                } else {
+                    alert('Error posting discussion');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error posting discussion');
+            }
+        });
+
+        // Auto-refresh discussions every 5 seconds
+        setInterval(() => {
+            // Fetch and update in real implementation
+        }, 5000);
+    </script>
+}

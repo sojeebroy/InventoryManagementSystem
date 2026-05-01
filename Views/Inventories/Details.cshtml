@@ -1,0 +1,198 @@
+@model Inventory
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container-main">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>@Model.Title</h1>
+            <p class="text-muted">
+                Created by @Model.Owner?.UserName on @Model.CreatedAt.ToString("MMM dd, yyyy")
+            </p>
+        </div>
+        @if (ViewBag.CanEdit)
+        {
+            <div class="col-md-4 text-end">
+                <a href="/Inventories/Edit/@Model.Id" class="btn btn-primary">Edit</a>
+                <a href="/Inventories/Settings/@Model.Id" class="btn btn-secondary">Settings</a>
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+    {
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <img src="@Model.ImageUrl" class="img-fluid rounded" style="max-height: 300px; object-fit: cover;">
+            </div>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Description</h5>
+                    <p class="card-text">@Html.Raw(MarkdownHelper.ToHtml(Model.Description))</p>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs" id="inventoryTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab">
+                        Items
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="discussion-tab" data-bs-toggle="tab" data-bs-target="#discussion" type="button" role="tab">
+                        Discussion
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics" type="button" role="tab">
+                        Statistics
+                    </button>
+                </li>
+                @if (ViewBag.CanEdit)
+                {
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
+                            Settings
+                        </button>
+                    </li>
+                }
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="items" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <div id="itemsContainer">
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="discussion" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <div id="discussionContainer">
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="statistics" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <div id="statisticsContainer">
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @if (ViewBag.CanEdit)
+                {
+                    <div class="tab-pane fade" id="settings" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
+                                <div id="settingsContainer">
+                                    Loading...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Information</h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">Category:</dt>
+                        <dd class="col-sm-8"><span class="badge bg-secondary">@Model.Category</span></dd>
+
+                        <dt class="col-sm-4">Visibility:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Visibility == Inventory_Management_System.Models.VisibilityType.Public)
+                            {
+                                <span class="badge bg-success">Public</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">Private</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Tags:</dt>
+                        <dd class="col-sm-8">
+                            @foreach (var tag in Model.Tags)
+                            {
+                                <span class="badge bg-info">@tag.Tag</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const inventoryId = @Model.Id;
+        const canEdit = @(ViewBag.CanEdit ? "true" : "false");
+        const userId = '@ViewBag.UserId';
+
+        // Load items tab
+        document.getElementById('items-tab').addEventListener('shown.bs.tab', function () {
+            loadItems();
+        });
+
+        // Load discussion tab
+        document.getElementById('discussion-tab').addEventListener('shown.bs.tab', function () {
+            loadDiscussion();
+        });
+
+        // Load statistics tab
+        document.getElementById('statistics-tab').addEventListener('shown.bs.tab', function () {
+            loadStatistics();
+        });
+
+        async function loadItems() {
+            try {
+                const response = await fetch(`/Inventories/Items/${inventoryId}`);
+                document.getElementById('itemsContainer').innerHTML = await response.text();
+            } catch (error) {
+                console.error('Error loading items:', error);
+                document.getElementById('itemsContainer').innerHTML = '<p class="text-danger">Error loading items</p>';
+            }
+        }
+
+        async function loadDiscussion() {
+            try {
+                const response = await fetch(`/Inventories/Discussion/${inventoryId}`);
+                document.getElementById('discussionContainer').innerHTML = await response.text();
+            } catch (error) {
+                console.error('Error loading discussion:', error);
+                document.getElementById('discussionContainer').innerHTML = '<p class="text-danger">Error loading discussion</p>';
+            }
+        }
+
+        async function loadStatistics() {
+            try {
+                const response = await fetch(`/Inventories/Statistics/${inventoryId}`);
+                document.getElementById('statisticsContainer').innerHTML = await response.text();
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                document.getElementById('statisticsContainer').innerHTML = '<p class="text-danger">Error loading statistics</p>';
+            }
+        }
+
+        // Load items tab by default
+        loadItems();
+    </script>
+}

@@ -1,0 +1,265 @@
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.search-bar {
+    flex: 0 0 40%;
+}
+
+.nav-link {
+    color: #6c757d !important;
+    margin-left: 15px;
+}
+
+.nav-link:hover {
+    color: var(--primary-color) !important;
+}
+
+.container-main {
+    min-height: calc(100vh - 200px);
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.table-responsive-custom {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    margin-bottom: 20px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+/* Custom ID Element Styles */
+.id-element {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.id-element:hover {
+    background-color: #fff;
+    border-color: #007bff;
+    box-shadow: 0 2px 6px rgba(0, 123, 255, 0.1);
+}
+
+.id-element-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    cursor: grab;
+    color: #6c757d;
+    flex-shrink: 0;
+}
+
+.id-element-drag-handle:hover {
+    color: #007bff;
+}
+
+.id-element-type-select {
+    min-width: 120px;
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #fff;
+    font-size: 14px;
+}
+
+.id-element-type-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.id-element-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+}
+
+.id-element-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.id-element-input-disabled {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.id-element-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    background-color: #e7f3ff;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.id-element-info-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    cursor: help;
+    color: #6c757d;
+    flex-shrink: 0;
+}
+
+.id-element-info-icon:hover {
+    color: #007bff;
+}
+
+.id-element-delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #6c757d;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.id-element-delete-btn:hover {
+    color: #dc3545;
+}
+
+.id-element-helper-text {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Tab Navigation Styling */
+.nav-tabs {
+    border-bottom: 2px solid #e9ecef !important;
+}
+
+.nav-tabs .nav-link {
+    color: #6c757d;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    border-bottom-color: #dee2e6;
+    color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+    border-bottom-color: #007bff;
+    color: #007bff;
+    background: none;
+}
+
+/* Button Styling */
+.btn-outline-primary {
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.btn-outline-primary:hover {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+}
+
+/* Badge Styling */
+.badge {
+    font-size: 12px;
+    padding: 6px 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .id-element {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .id-element-input,
+    .id-element-type-select {
+        width: 100%;
+    }
+
+    .nav-tabs {
+        flex-wrap: wrap;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+}
+
+/* Animation */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.id-element {
+    animation: slideIn 0.3s ease;
+}
+@media (max-width: 768px) {
+    .search-bar {
+        flex: 0 0 100% !important;
+        margin-top: 10px;
+    }
+
+    .nav-link {
+        margin-left: 0;
+    }
+}

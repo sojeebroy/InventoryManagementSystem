@@ -1,0 +1,274 @@
+@using Inventory_Management_System.Models
+@model List<Item>
+@{
+    var inventory = (Inventory)ViewBag.Inventory;
+    var canEdit = (bool)ViewBag.CanEdit;
+    var userId = (string)ViewBag.UserId;
+    var totalPages = (int)ViewBag.TotalPages;
+    var currentPage = (int)ViewBag.CurrentPage;
+}
+
+<div class="mb-3">
+    @if (canEdit)
+    {
+        <button class="btn btn-primary" id="addItemBtn">+ Add Item</button>
+    }
+    <form class="d-inline" method="get" asp-controller="Inventories" asp-action="Items" asp-route-id="@inventory.Id">
+        <div class="input-group d-inline-flex" style="width: auto;">
+            <input type="text" name="search" class="form-control" placeholder="Search items..." value="">
+            <button class="btn btn-outline-secondary" type="submit">Search</button>
+        </div>
+    </form>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <p class="text-muted">No items in this inventory yet</p>
+        @if (canEdit)
+        {
+            <button class="btn btn-primary" id="addItemBtn2">+ Add Your First Item</button>
+        }
+    </div>
+}
+else
+{
+    <div class="table-responsive-custom">
+        <table class="table table-hover table-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>Custom ID</th>
+                    @foreach (var field in inventory.CustomFields.Where(f => f.IsVisibleInTable))
+                    {
+                        <th>@field.Title</th>
+                    }
+                    <th>Created By</th>
+                    <th>Created</th>
+                    <th>Likes</th>
+                    @if (canEdit)
+                    {
+                        <th></th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@item.CustomId</strong>
+                        </td>
+                        @foreach (var field in inventory.CustomFields.Where(f => f.IsVisibleInTable))
+                        {
+                            <td>
+                                @GetFieldValue(item, field)
+                            </td>
+                        }
+                        <td>
+                            <small>@item.CreatedBy?.UserName</small>
+                        </td>
+                        <td>
+                            <small>@item.CreatedAt.ToString("MMM dd")</small>
+                        </td>
+                        <td>
+                            <span class="like-count" data-item-id="@item.Id">0</span> ❤️
+                        </td>
+                        @if (canEdit)
+                        {
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary editItemBtn" data-item-id="@item.Id">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger deleteItemBtn" data-item-id="@item.Id">Delete</button>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    {
+        <nav aria-label="Page navigation" class="mt-3">
+            <ul class="pagination justify-content-center">
+                @if (currentPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="/Inventories/Items/@inventory.Id?page=1">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="/Inventories/Items/@inventory.Id?page=@(currentPage - 1)">Previous</a>
+                    </li>
+                }
+
+                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                {
+                    @if (i == currentPage)
+                    {
+                        <li class="page-item active"><span class="page-link">@i</span></li>
+                    }
+                    else
+                    {
+                        <li class="page-item"><a class="page-link" href="/Inventories/Items/@inventory.Id?page=@i">@i</a></li>
+                    }
+                }
+
+                @if (currentPage < totalPages)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="/Inventories/Items/@inventory.Id?page=@(currentPage + 1)">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="/Inventories/Items/@inventory.Id?page=@totalPages">Last</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
+
+<!-- Add/Edit Item Modal -->
+<div class="modal fade" id="itemModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="itemModalTitle">Add Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="itemForm">
+                    @foreach (var field in inventory.CustomFields.OrderBy(f => f.DisplayOrder))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">@field.Title</label>
+                            @if (!string.IsNullOrEmpty(field.Description))
+                            {
+                                <small class="form-text text-muted d-block">@field.Description</small>
+                            }
+                            @GetFieldInput(field)
+                        </div>
+                    }
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveItemBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetFieldValue(Item item, CustomField field)
+    {
+        var fieldName = field.FieldName ?? $"Custom{field.FieldType}{field.DisplayOrder}Value";
+
+        return field.FieldType switch
+        {
+            CustomFieldType.SingleLineText => item.CustomString1Value ?? "-",
+            CustomFieldType.MultiLineText => item.CustomText1Value?.Substring(0, Math.Min(30, item.CustomText1Value.Length)) + "..." ?? "-",
+            CustomFieldType.Numeric => item.CustomNumber1Value?.ToString() ?? "-",
+            CustomFieldType.Boolean => (item.CustomBool1Value ?? false) ? "Yes" : "No",
+            CustomFieldType.Link => $"<a href=\"{item.CustomLink1Value}\" target=\"_blank\">Link</a>",
+            _ => "-"
+        };
+    }
+
+    private string GetFieldInput(CustomField field)
+    {
+        return field.FieldType switch
+        {
+            CustomFieldType.SingleLineText => $"<input type=\"text\" class=\"form-control\" name=\"{field.FieldName}\">",
+            CustomFieldType.MultiLineText => $"<textarea class=\"form-control\" rows=\"3\" name=\"{field.FieldName}\"></textarea>",
+            CustomFieldType.Numeric => $"<input type=\"number\" step=\"0.01\" class=\"form-control\" name=\"{field.FieldName}\">",
+            CustomFieldType.Boolean => $"<input type=\"checkbox\" class=\"form-check-input\" name=\"{field.FieldName}\">",
+            CustomFieldType.Link => $"<input type=\"url\" class=\"form-control\" name=\"{field.FieldName}\">",
+            _ => "<input type=\"text\" class=\"form-control\" name=\"field\">"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        const inventoryId = @inventory.Id;
+        const itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
+
+        document.getElementById('addItemBtn')?.addEventListener('click', () => {
+            document.getElementById('itemModalTitle').textContent = 'Add Item';
+            document.getElementById('itemForm').reset();
+            document.getElementById('itemForm').dataset.itemId = '';
+            itemModal.show();
+        });
+
+        document.getElementById('addItemBtn2')?.addEventListener('click', () => {
+            document.getElementById('itemModalTitle').textContent = 'Add Item';
+            document.getElementById('itemForm').reset();
+            document.getElementById('itemForm').dataset.itemId = '';
+            itemModal.show();
+        });
+
+        document.getElementById('saveItemBtn').addEventListener('click', async () => {
+            const formData = new FormData(document.getElementById('itemForm'));
+            const itemId = document.getElementById('itemForm').dataset.itemId;
+
+            const dto = { inventoryId };
+            formData.forEach((value, key) => {
+                dto[key] = value;
+            });
+
+            try {
+                const method = itemId ? 'PUT' : 'POST';
+                const url = itemId ? `/api/items/${itemId}` : '/api/items';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+
+                if (response.ok) {
+                    itemModal.hide();
+                    location.reload();
+                } else {
+                    alert('Error saving item');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error saving item');
+            }
+        });
+
+        document.querySelectorAll('.deleteItemBtn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                if (confirm('Are you sure you want to delete this item?')) {
+                    try {
+                        const response = await fetch(`/api/items/${e.target.dataset.itemId}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('Error deleting item');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error deleting item');
+                    }
+                }
+            });
+        });
+
+        // Load like counts
+        document.querySelectorAll('.like-count').forEach(async (span) => {
+            const itemId = span.dataset.itemId;
+            try {
+                const response = await fetch(`/api/items/${itemId}/likes`);
+                const data = await response.json();
+                span.textContent = data.count;
+            } catch (error) {
+                console.error('Error loading like count:', error);
+            }
+        });
+    </script>
+}
