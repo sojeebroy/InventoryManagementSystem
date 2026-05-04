@@ -1,0 +1,64 @@
+@using Inventory_Management_System.Models.ViewModels
+@model TagFilterViewModel
+
+@{
+    ViewData["Title"] = $"Inventories tagged with '{Model.Tag}' - Inventory Management System";
+}
+
+<div class="container-fluid py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>
+                <i class="bi bi-tag"></i> Inventories Tagged with "<strong>@Model.Tag</strong>"
+            </h1>
+            <p class="text-muted">
+                Showing @Model.Results.Count result(s)
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            @if (Model.Results.Any())
+            {
+                <div class="row">
+                    @foreach (var inventory in Model.Results)
+                    {
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                @if (!string.IsNullOrEmpty(inventory.ImageUrl))
+                                {
+                                    <img src="@inventory.ImageUrl" class="card-img-top" 
+                                         alt="@inventory.Title" style="height: 200px; object-fit: cover;">
+                                }
+                                <div class="card-body">
+                                    <h5 class="card-title">@inventory.Title</h5>
+                                    <p class="card-text text-muted small">@inventory.Description</p>
+                                    <div class="mb-2">
+                                        <small>
+                                            <strong>@inventory.OwnerName</strong> 
+                                            • @inventory.CreatedAt.ToString("MMM dd, yyyy")
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-success">@inventory.ItemCount Items</span>
+                                </div>
+                                <div class="card-footer bg-white">
+                                    <a asp-controller="Inventory" asp-action="Details" 
+                                       asp-route-id="@inventory.Id" class="btn btn-primary btn-sm w-100">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    No inventories tagged with "<strong>@Model.Tag</strong>" yet.
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -463,3 +463,4 @@ D:\Itransition\Inventory Management System\Inventory Management System\bin\Debug
 D:\Itransition\Inventory Management System\Inventory Management System\bin\Debug\net8.0\Microsoft.Extensions.Identity.Stores.dll
 D:\Itransition\Inventory Management System\Inventory Management System\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.Facebook.dll
 D:\Itransition\Inventory Management System\Inventory Management System\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.Google.dll
+D:\Itransition\Inventory Management System\Inventory Management System\obj\Debug\net8.0\Inventory Management System.sourcelink.json

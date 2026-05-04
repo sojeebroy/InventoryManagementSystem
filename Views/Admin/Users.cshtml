@@ -1,0 +1,242 @@
+@using Inventory_Management_System.Models.ViewModels
+@model List<UserAdminViewModel>
+@{
+    ViewData["Title"] = "User Management";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>👥 User Management</h1>
+        <a href="/Admin/Users" class="btn btn-secondary">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </a>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-8">
+                    <input type="text" name="searchTerm" class="form-control" 
+                           placeholder="Search by email, username, or name..." 
+                           value="@ViewBag.SearchTerm">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">🔍 Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%">Avatar</th>
+                        <th style="width: 15%">Email</th>
+                        <th style="width: 15%">Name</th>
+                        <th style="width: 10%">Roles</th>
+                        <th style="width: 10%">Status</th>
+                        <th style="width: 15%">Created</th>
+                        <th style="width: 15%">Last Login</th>
+                        <th style="width: 15%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <p class="text-muted">No users found</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var user in Model)
+                        {
+                            <tr class="align-middle">
+                                <td>
+                                    <img src="@(user.Provider == "Google" ? "https://via.placeholder.com/32?text=👤" : "https://via.placeholder.com/32?text=👤")" 
+                                         alt="Avatar" class="rounded-circle" width="32" height="32">
+                                </td>
+                                <td>
+                                    <small class="text-monospace">@user.Email</small>
+                                </td>
+                                <td>
+                                    <strong>@user.FirstName @user.LastName</strong>
+                                </td>
+                                <td>
+                                    @foreach (var role in user.Roles)
+                                    {
+                                        @if (role == "Admin")
+                                        {
+                                            <span class="badge bg-danger">⭐ @role</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">@role</span>
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.IsBlocked)
+                                    {
+                                        <span class="badge bg-warning text-dark">🔒 Blocked</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">✓ Active</span>
+                                    }
+                                </td>
+                                <td>
+                                    <small>@user.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                </td>
+                                <td>
+                                    <small>
+                                        @if (user.LastLoginAt.HasValue)
+                                        {
+                                            @user.LastLoginAt.Value.ToString("MMM dd, yyyy HH:mm")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Never</span>
+                                        }
+                                    </small>
+                                </td>
+                                <td>
+                                    <a href="/Admin/Users/@user.Id" class="btn btn-sm btn-info">View</a>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                            ⋮
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                @if (user.IsBlocked)
+                                                {
+                                                    <form action="/Admin/Users/@user.Id/Unblock" method="post" style="display:inline;">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item text-success">
+                                                            🔓 Unblock User
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    <form action="/Admin/Users/@user.Id/Block" method="post" style="display:inline;">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item text-warning">
+                                                            🔒 Block User
+                                                        </button>
+                                                    </form>
+                                                }
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                @if (user.IsAdmin)
+                                                {
+                                                    <form action="/Admin/Users/@user.Id/RevokeAdmin" method="post" style="display:inline;">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item text-warning">
+                                                            ⬇️ Revoke Admin
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    <form action="/Admin/Users/@user.Id/GrantAdmin" method="post" style="display:inline;">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item text-info">
+                                                            ⬆️ Grant Admin
+                                                        </button>
+                                                    </form>
+                                                }
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form action="/Admin/Users/@user.Id/Delete" method="post" style="display:inline;" 
+                                                      onsubmit="return confirm('Are you sure? This cannot be undone.');">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="dropdown-item text-danger">
+                                                        🗑️ Delete User
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" href="?page=1&searchTerm=@ViewBag.SearchTerm">First</a>
+                </li>
+                <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" href="?page=@(ViewBag.CurrentPage - 1)&searchTerm=@ViewBag.SearchTerm">Previous</a>
+                </li>
+
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    if (i == ViewBag.CurrentPage)
+                    {
+                        <li class="page-item active">
+                            <span class="page-link">@i</span>
+                        </li>
+                    }
+                    else if (i <= 3 || i >= ViewBag.TotalPages - 2 || (i >= ViewBag.CurrentPage - 2 && i <= ViewBag.CurrentPage + 2))
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="?page=@i&searchTerm=@ViewBag.SearchTerm">@i</a>
+                        </li>
+                    }
+                    else if (i == 4 || i == ViewBag.TotalPages - 3)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                }
+
+                <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="?page=@(ViewBag.CurrentPage + 1)&searchTerm=@ViewBag.SearchTerm">Next</a>
+                </li>
+                <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="?page=@ViewBag.TotalPages&searchTerm=@ViewBag.SearchTerm">Last</a>
+                </li>
+            </ul>
+        </nav>
+    }
+
+    <!-- Summary -->
+    <div class="alert alert-info mt-4">
+        <strong>Total Users:</strong> @ViewBag.TotalCount | 
+        <strong>Current Page:</strong> @ViewBag.CurrentPage of @ViewBag.TotalPages | 
+        <strong>Page Size:</strong> @ViewBag.PageSize
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .text-monospace {
+        font-family: 'Courier New', monospace;
+    }
+
+    .btn-group {
+        display: flex;
+    }
+</style>
