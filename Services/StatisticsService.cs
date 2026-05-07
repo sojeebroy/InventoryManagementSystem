@@ -1,13 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
+namespace Inventory_Management_System.Services.Interfaces;
 
-namespace Inventory_Management_System.Services;
-
-public interface IStatisticsService
-{
-    Task<InventoryStatistics> GetInventoryStatisticsAsync(int inventoryId);
-}
 
 public class StatisticsService : IStatisticsService
 {

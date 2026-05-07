@@ -1,8 +1,5 @@
 namespace Inventory_Management_System.Models.ViewModels;
 
-/// <summary>
-/// ViewModel for admin user management
-/// </summary>
 public class UserAdminViewModel
 {
     public string Id { get; set; } = string.Empty;

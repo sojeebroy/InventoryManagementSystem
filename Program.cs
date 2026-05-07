@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
-using Inventory_Management_System.Services;
 using Inventory_Management_System.Middleware;
+using Inventory_Management_System.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -2,12 +2,23 @@ namespace Inventory_Management_System.Models.DTOs;
 
 public class CreateInventoryDto
 {
-    public string Title { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string? Category { get; set; }
-    public string? ImageUrl { get; set; }
-    public string VisibilityType { get; set; } = "Private";
-    public List<string> Tags { get; set; } = new();
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public string Category { get; set; }
+    public string ImageUrl { get; set; }
+    public string VisibilityType { get; set; }
+    public string TagsInput { get; set; } = string.Empty;
+
+    // Helper property to parse tags from comma-separated string
+    public List<string> Tags
+    {
+        get => string.IsNullOrWhiteSpace(TagsInput)
+            ? new()
+            : TagsInput.Split(',')
+                .Select(t => t.Trim())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToList();
+    }
 }
 
 public class UpdateInventoryDto
@@ -18,8 +29,19 @@ public class UpdateInventoryDto
     public string? Category { get; set; }
     public string? ImageUrl { get; set; }
     public string VisibilityType { get; set; } = "Private";
-    public List<string> Tags { get; set; } = new();
+    public string TagsInput { get; set; } = string.Empty;
     public int Version { get; set; }
+
+    // Helper property to parse tags from comma-separated string
+    public List<string> Tags
+    {
+        get => string.IsNullOrWhiteSpace(TagsInput)
+            ? new()
+            : TagsInput.Split(',')
+                .Select(t => t.Trim())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToList();
+    }
 }
 
 public class InventoryAccessDto

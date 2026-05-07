@@ -1,15 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
-namespace Inventory_Management_System.Services;
-
-public interface ICustomIdService
-{
-    string GenerateCustomId(int inventoryId, List<CustomIdElement> format);
-    bool ValidateCustomId(string customId, List<CustomIdElement> format);
-    string GetPreviewCustomId(List<CustomIdElement> format);
-}
+namespace Inventory_Management_System.Services.Interfaces;
 
 public class CustomIdService : ICustomIdService
 {

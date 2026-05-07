@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Models.ViewModels;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Inventory_Management_System.Controllers;
 
@@ -17,9 +17,6 @@ public class HomeController : Controller
         _logger = logger;
     }
 
-    /// <summary>
-    /// Home page with latest inventories, top-5 popular, and tag cloud
-    /// </summary>
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -108,7 +105,7 @@ public class HomeController : Controller
 
             // Full-text search on Inventory Title, Description, and Tags
             var results = await _context.Inventories
-                .Where(i => i.Visibility == VisibilityType.Public && 
+                .Where(i => i.Visibility == VisibilityType.Public &&
                     (EF.Functions.Like(i.Title, $"%{normalizedQuery}%") ||
                      EF.Functions.Like(i.Description, $"%{normalizedQuery}%") ||
                      i.Tags.Any(t => EF.Functions.Like(t.Tag, $"%{normalizedQuery}%"))))
@@ -165,7 +162,7 @@ public class HomeController : Controller
             const int pageSize = 20;
 
             var results = await _context.InventoryTags
-                .Where(t => t.Tag.ToLower() == tag.ToLower() && 
+                .Where(t => t.Tag.ToLower() == tag.ToLower() &&
                     t.Inventory!.Visibility == VisibilityType.Public)
                 .Select(t => t.Inventory)
                 .Include(i => i!.Owner)

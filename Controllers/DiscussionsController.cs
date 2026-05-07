@@ -4,8 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Models.DTOs;
-using Inventory_Management_System.Services;
-
+using Inventory_Management_System.Services.Interfaces;
 namespace Inventory_Management_System.Controllers;
 
 [Authorize]

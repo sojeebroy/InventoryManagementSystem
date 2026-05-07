@@ -1,15 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
-
-namespace Inventory_Management_System.Services;
-
-public interface IDiscussionService
-{
-    Task<List<Discussion>> GetInventoryDiscussionsAsync(int inventoryId);
-    Task<Discussion> AddDiscussionAsync(Discussion discussion);
-    Task DeleteDiscussionAsync(int id);
-}
+namespace Inventory_Management_System.Services.Interfaces;
 
 public class DiscussionService : IDiscussionService
 {

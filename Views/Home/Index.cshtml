@@ -2,8 +2,18 @@
 @model HomePageViewModel
 
 @{
-    ViewData["Title"] = "Home - Inventory Management System";
+    ViewData["Title"] = "Inventory Manager";
 }
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/premium-login.css" />
+</head>
+<!-- Centered Branding -->
+<div class="branding-section">
+    <div class="branding-icon">📦</div>
+    <h2>Inventory Manager</h2>
+    <p>Organize, track, and manage your collections with ease</p>
+</div>
 
 <div class="container-fluid py-5">
     <!-- Search Bar -->
@@ -43,7 +53,6 @@
                                 <th>Items</th>
                                 <th>Tags</th>
                                 <th>Created</th>
-                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -75,12 +84,6 @@
                                         }
                                     </td>
                                     <td class="text-muted small">@inventory.CreatedAt.ToString("MMM dd, yyyy")</td>
-                                    <td>
-                                        <a asp-controller="Inventory" asp-action="Details" 
-                                           asp-route-id="@inventory.Id" class="btn btn-sm btn-outline-primary">
-                                            View
-                                        </a>
-                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -142,7 +145,7 @@
                                     </div>
                                 </div>
                                 <div class="card-footer bg-white border-top-0">
-                                    <a asp-controller="Inventory" asp-action="Details" 
+                                    <a asp-controller="Inventories" asp-action="Details" 
                                        asp-route-id="@inventory.Id" class="btn btn-primary btn-sm w-100">
                                         View Details
                                     </a>

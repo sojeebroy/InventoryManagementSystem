@@ -23,7 +23,7 @@ public class TagCloudDto
 {
     public string TagName { get; set; } = string.Empty;
     public int Frequency { get; set; }
-    public string Size { get; set; } = "Small"; // Small, Medium, Large, ExtraLarge
+    public string Size { get; set; } = "Small"; 
 }
 
 public class SearchResultsViewModel

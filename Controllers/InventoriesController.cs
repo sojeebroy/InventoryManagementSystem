@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Models.DTOs;
-using Inventory_Management_System.Services;
+using Inventory_Management_System.Services.Interfaces;
 using System.Text.Json;
 
 namespace Inventory_Management_System.Controllers;
@@ -67,9 +67,9 @@ public class InventoriesController : Controller
             return NotFound();
 
         // Check access
-        if (inventory.Visibility == VisibilityType.Private && 
-            (string.IsNullOrEmpty(userId) || 
-             (inventory.OwnerId != userId && 
+        if (inventory.Visibility == VisibilityType.Private &&
+            (string.IsNullOrEmpty(userId) ||
+             (inventory.OwnerId != userId &&
               !inventory.AccessControls.Any(ac => ac.UserId == userId))))
         {
             return Forbid();
@@ -111,10 +111,22 @@ public class InventoriesController : Controller
 
         var created = await _inventoryService.CreateInventoryAsync(inventory);
 
-        // Add tags if needed - implementation in future
+        // Add tags if provided - create tags directly in database
         if (dto.Tags.Any())
         {
-            // Tags will be added in a separate call
+            foreach (var tagName in dto.Tags)
+            {                
+                if (!string.IsNullOrWhiteSpace(tagName))
+                {
+                    var inventoryTag = new InventoryTag
+                    {
+                        InventoryId = created.Id,
+                        Tag = tagName.Trim()
+                    };
+                    // Add directly to context and save
+                    await _inventoryService.AddTagAsync(inventoryTag);
+                }           
+            }
         }
 
         return RedirectToAction(nameof(Details), new { id = created.Id });
@@ -130,7 +142,19 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
-        return View(inventory);
+        var dto = new UpdateInventoryDto
+        {
+            Id = inventory.Id,
+            Title = inventory.Title,
+            Description = inventory.Description,
+            Category = inventory.Category,
+            ImageUrl = inventory.ImageUrl,
+            VisibilityType = inventory.Visibility.ToString(),
+            TagsInput = string.Join(", ", inventory.Tags.Select(t => t.Tag)),
+            Version = inventory.Version
+        };
+
+        return View(dto);
     }
 
     [HttpPost]
@@ -140,7 +164,7 @@ public class InventoriesController : Controller
         if (string.IsNullOrEmpty(userId) || !await _authService.CanEditInventoryAsync(dto.Id, userId))
             return Forbid();
 
-        var inventory = await _inventoryService.GetInventoryByIdAsync(dto.Id);
+        var inventory = await _inventoryService.GetInventoryByIdForUpdateAsync(dto.Id);
         if (inventory == null)
             return NotFound();
 
@@ -155,6 +179,31 @@ public class InventoriesController : Controller
         try
         {
             await _inventoryService.UpdateInventoryAsync(inventory);
+
+            // Update tags - delete old ones and add new ones
+            if (dto.Tags != null && dto.Tags.Any())
+            {
+                await _inventoryService.DeleteInventoryTagsAsync(dto.Id);
+
+                foreach (var tagName in dto.Tags)
+                {
+                    if (!string.IsNullOrWhiteSpace(tagName))
+                    {
+                        var inventoryTag = new InventoryTag
+                        {
+                            InventoryId = dto.Id,
+                            Tag = tagName.Trim()
+                        };
+                        await _inventoryService.AddTagAsync(inventoryTag);
+                    }
+                }
+            }
+            else
+            {
+                // If no tags provided, delete all existing tags
+                await _inventoryService.DeleteInventoryTagsAsync(dto.Id);
+            }
+
             return RedirectToAction(nameof(Details), new { id = dto.Id });
         }
         catch (InvalidOperationException ex)
@@ -163,8 +212,6 @@ public class InventoriesController : Controller
             return View(dto);
         }
     }
-
-    [HttpPost]
     public async Task<IActionResult> Delete(int id)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;

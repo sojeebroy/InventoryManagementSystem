@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Inventory Management System</title>
+    <title>@ViewData["Title"] - Inventory Manager</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -13,7 +13,7 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Inventories" asp-action="Index"><strong>📦 Inventory Manager</strong></a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index"><strong>📦 Inventory Manager</strong></a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -49,7 +49,14 @@
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                                     <li><a class="dropdown-item" href="/Identity/Account/Manage">Settings</a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="/Identity/Account/Logout">Logout</a></li>
+                                    <li>
+                                        <form action="/Account/Logout" method="post" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="dropdown-item" style="background: none; border: none; padding: 0.5rem 1rem; cursor: pointer; width: 100%; text-align: left;">
+                                                Logout
+                                            </button>
+                                        </form>
+                                    </li>
                                 </ul>
                             </li>
                         }
