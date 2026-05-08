@@ -161,19 +161,25 @@ public class HomeController : Controller
         {
             const int pageSize = 20;
 
-            var results = await _context.InventoryTags
+            // Get distinct inventories with the tag
+            var inventoryIds = await _context.InventoryTags
                 .Where(t => t.Tag.ToLower() == tag.ToLower() &&
                     t.Inventory!.Visibility == VisibilityType.Public)
-                .Select(t => t.Inventory)
-                .Include(i => i!.Owner)
-                .Include(i => i!.Tags)
-                .Include(i => i!.Items)
-                .OrderByDescending(i => i!.CreatedAt)
+                .Select(t => t.InventoryId)
+                .Distinct()
+                .OrderByDescending(id => _context.Inventories.Where(i => i.Id == id).Select(i => i.CreatedAt).FirstOrDefault())
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize + 1)
+                .ToListAsync();
+
+            var results = await _context.Inventories
+                .Where(i => inventoryIds.Contains(i.Id))
+                .Include(i => i.Owner)
+                .Include(i => i.Tags)
+                .Include(i => i.Items)
                 .Select(i => new InventoryCardDto
                 {
-                    Id = i!.Id,
+                    Id = i.Id,
                     Title = i.Title,
                     Description = i.Description.Length > 100 ? i.Description.Substring(0, 100) + "..." : i.Description,
                     ImageUrl = i.ImageUrl,
@@ -184,11 +190,11 @@ public class HomeController : Controller
                 })
                 .ToListAsync();
 
-            var hasNextPage = results.Count > pageSize;
+            var hasNextPage = inventoryIds.Count > pageSize;
             var viewModel = new TagFilterViewModel
             {
                 Tag = tag,
-                Results = results.Take(pageSize).ToList(),
+                Results = results,
                 CurrentPage = page,
                 HasNextPage = hasNextPage
             };

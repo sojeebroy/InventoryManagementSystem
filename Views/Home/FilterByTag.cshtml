@@ -2,18 +2,25 @@
 @model TagFilterViewModel
 
 @{
-    ViewData["Title"] = $"Inventories tagged with '{Model.Tag}' - Inventory Management System";
+    ViewData["Title"] = $"Inventories tagged with '{Model.Tag}' - Inventory Manager";
 }
 
 <div class="container-fluid py-5">
     <div class="row mb-4">
-        <div class="col-12">
-            <h1>
-                <i class="bi bi-tag"></i> Inventories Tagged with "<strong>@Model.Tag</strong>"
-            </h1>
-            <p class="text-muted">
-                Showing @Model.Results.Count result(s)
-            </p>
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1>
+                    <i class="bi bi-tag"></i> Inventories Tagged with "<strong>@Model.Tag</strong>"
+                </h1>
+                <p class="text-muted">
+                    Showing @Model.Results.Count result(s)
+                </p>
+            </div>
+            <div>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Home
+                </a>
+            </div>
         </div>
     </div>
 
@@ -25,11 +32,18 @@
                     @foreach (var inventory in Model.Results)
                     {
                         <div class="col-md-6 col-lg-4 mb-4">
-                            <div class="card h-100 shadow-sm">
+                            <div class="card h-100 shadow-sm hover-card">
                                 @if (!string.IsNullOrEmpty(inventory.ImageUrl))
                                 {
                                     <img src="@inventory.ImageUrl" class="card-img-top" 
                                          alt="@inventory.Title" style="height: 200px; object-fit: cover;">
+                                }
+                                else
+                                {
+                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                         style="height: 200px;">
+                                        <i class="bi bi-image" style="font-size: 3rem; color: #ccc;"></i>
+                                    </div>
                                 }
                                 <div class="card-body">
                                     <h5 class="card-title">@inventory.Title</h5>
@@ -40,10 +54,24 @@
                                             • @inventory.CreatedAt.ToString("MMM dd, yyyy")
                                         </small>
                                     </div>
-                                    <span class="badge bg-success">@inventory.ItemCount Items</span>
+                                    <div class="mb-2">
+                                        <span class="badge bg-success">@inventory.ItemCount Items</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        @if (inventory.Tags.Any())
+                                        {
+                                            @foreach (var tag in inventory.Tags)
+                                            {
+                                                <a asp-action="FilterByTag" asp-route-tag="@tag" 
+                                                   class="badge bg-light text-dark text-decoration-none me-1 tag-link">
+                                                    #@tag
+                                                </a>
+                                            }
+                                        }
+                                    </div>
                                 </div>
-                                <div class="card-footer bg-white">
-                                    <a asp-controller="Inventory" asp-action="Details" 
+                                <div class="card-footer bg-white border-top-0">
+                                    <a asp-controller="Inventories" asp-action="Details" 
                                        asp-route-id="@inventory.Id" class="btn btn-primary btn-sm w-100">
                                         View Details
                                     </a>
@@ -62,3 +90,31 @@
         </div>
     </div>
 </div>
+
+<style>
+    .hover-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .tag-link {
+        display: inline-block;
+        padding: 4px 8px;
+        background-color: #e9ecef !important;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+
+    .tag-link:hover {
+        background-color: #0d6efd !important;
+        color: white !important;
+        text-decoration: none;
+        transform: scale(1.05);
+    }
+</style>
