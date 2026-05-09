@@ -55,7 +55,6 @@
                             <th>Items</th>
                             <th>Visibility</th>
                             <th>Created</th>
-                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -84,16 +83,61 @@
                                 <td>
                                     <small>@inventory.CreatedAt.ToString("MMM dd, yyyy")</small>
                                 </td>
-                                <td class="text-end">
-                                    <a href="/Inventories/Details/@inventory.Id" class="btn btn-sm btn-outline-primary">View</a>
-                                    <a href="/Inventories/Edit/@inventory.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                    <a href="/Inventories/Settings/@inventory.Id" class="btn btn-sm btn-outline-info">Settings</a>
-                                </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination for Owned Inventories -->
+            @if (ViewBag.OwnedTotalPages > 1)
+            {
+                <nav class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(ViewBag.OwnedCurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=1&accessiblePage=@ViewBag.AccessibleCurrentPage&sortBy=@ViewBag.CurrentSort">First</a>
+                        </li>
+                        <li class="page-item @(ViewBag.OwnedCurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@(ViewBag.OwnedCurrentPage - 1)&accessiblePage=@ViewBag.AccessibleCurrentPage&sortBy=@ViewBag.CurrentSort">Previous</a>
+                        </li>
+
+                        @for (int i = 1; i <= ViewBag.OwnedTotalPages; i++)
+                        {
+                            if (i == ViewBag.OwnedCurrentPage)
+                            {
+                                <li class="page-item active">
+                                    <span class="page-link">@i</span>
+                                </li>
+                            }
+                            else if (i <= 3 || i >= ViewBag.OwnedTotalPages - 2 || (i >= ViewBag.OwnedCurrentPage - 2 && i <= ViewBag.OwnedCurrentPage + 2))
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="?ownedPage=@i&accessiblePage=@ViewBag.AccessibleCurrentPage&sortBy=@ViewBag.CurrentSort">@i</a>
+                                </li>
+                            }
+                            else if (i == 4 || i == ViewBag.OwnedTotalPages - 3)
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            }
+                        }
+
+                        <li class="page-item @(ViewBag.OwnedCurrentPage == ViewBag.OwnedTotalPages ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@(ViewBag.OwnedCurrentPage + 1)&accessiblePage=@ViewBag.AccessibleCurrentPage&sortBy=@ViewBag.CurrentSort">Next</a>
+                        </li>
+                        <li class="page-item @(ViewBag.OwnedCurrentPage == ViewBag.OwnedTotalPages ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@ViewBag.OwnedTotalPages&accessiblePage=@ViewBag.AccessibleCurrentPage&sortBy=@ViewBag.CurrentSort">Last</a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="alert alert-info mt-2">
+                    <strong>Total:</strong> @ViewBag.OwnedTotalCount inventories | 
+                    <strong>Page:</strong> @ViewBag.OwnedCurrentPage of @ViewBag.OwnedTotalPages | 
+                    <strong>Per Page:</strong> @ViewBag.OwnedPageSize
+                </div>
+            }
         }
     </div>
 
@@ -134,7 +178,6 @@
                             <th>Owner</th>
                             <th>Items</th>
                             <th>Created</th>
-                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -156,14 +199,62 @@
                                 <td>
                                     <small>@inventory.CreatedAt.ToString("MMM dd, yyyy")</small>
                                 </td>
-                                <td class="text-end">
-                                    <a href="/Inventories/Details/@inventory.Id" class="btn btn-sm btn-outline-primary">View</a>
-                                </td>
+
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination for Accessible Inventories -->
+            @if (ViewBag.AccessibleTotalPages > 1)
+            {
+                <nav class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(ViewBag.AccessibleCurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@ViewBag.OwnedCurrentPage&accessiblePage=1&sortBy=@ViewBag.CurrentSort">First</a>
+                        </li>
+                        <li class="page-item @(ViewBag.AccessibleCurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@ViewBag.OwnedCurrentPage&accessiblePage=@(ViewBag.AccessibleCurrentPage - 1)&sortBy=@ViewBag.CurrentSort">Previous</a>
+                        </li>
+
+                        @for (int i = 1; i <= ViewBag.AccessibleTotalPages; i++)
+                        {
+                            if (i == ViewBag.AccessibleCurrentPage)
+                            {
+                                <li class="page-item active">
+                                    <span class="page-link">@i</span>
+                                </li>
+                            }
+                            else if (i <= 3 || i >= ViewBag.AccessibleTotalPages - 2 || (i >= ViewBag.AccessibleCurrentPage - 2 && i <= ViewBag.AccessibleCurrentPage + 2))
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="?ownedPage=@ViewBag.OwnedCurrentPage&accessiblePage=@i&sortBy=@ViewBag.CurrentSort">@i</a>
+                                </li>
+                            }
+                            else if (i == 4 || i == ViewBag.AccessibleTotalPages - 3)
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            }
+                        }
+
+                        <li class="page-item @(ViewBag.AccessibleCurrentPage == ViewBag.AccessibleTotalPages ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@ViewBag.OwnedCurrentPage&accessiblePage=@(ViewBag.AccessibleCurrentPage + 1)&sortBy=@ViewBag.CurrentSort">Next</a>
+                        </li>
+                        <li class="page-item @(ViewBag.AccessibleCurrentPage == ViewBag.AccessibleTotalPages ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@ViewBag.OwnedCurrentPage&accessiblePage=@ViewBag.AccessibleTotalPages&sortBy=@ViewBag.CurrentSort">Last</a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="alert alert-info mt-2">
+                    <strong>Total:</strong> @ViewBag.AccessibleTotalCount inventories | 
+                    <strong>Page:</strong> @ViewBag.AccessibleCurrentPage of @ViewBag.AccessibleTotalPages | 
+                    <strong>Per Page:</strong> @ViewBag.AccessiblePageSize
+                </div>
+            }
         }
     </div>
 </div>

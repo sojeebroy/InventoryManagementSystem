@@ -35,7 +35,7 @@ public class InventoriesController : Controller
     }
 
     [AllowAnonymous]
-    public async Task<IActionResult> Index(string searchTerm = "")
+    public async Task<IActionResult> Index(string searchTerm = "", int page = 1)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
@@ -53,8 +53,21 @@ public class InventoriesController : Controller
             inventories = new List<Inventory>();
         }
 
+        const int pageSize = 10;
+        var totalCount = inventories.Count;
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        var paginatedList = inventories
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
         ViewBag.SearchTerm = searchTerm;
-        return View(inventories);
+        ViewBag.CurrentPage = page;
+        ViewBag.TotalPages = totalPages;
+        ViewBag.TotalCount = totalCount;
+        ViewBag.PageSize = pageSize;
+
+        return View(paginatedList);
     }
 
     [AllowAnonymous]

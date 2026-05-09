@@ -17,11 +17,13 @@ public class DashboardController : Controller
         _userManager = userManager;
     }
 
-    public async Task<IActionResult> Index(string sortBy = "date", string filterBy = "all")
+    public async Task<IActionResult> Index(string sortBy = "date", string filterBy = "all", int ownedPage = 1, int accessiblePage = 1)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
+
+        const int pageSize = 10;
 
         var ownedInventories = await _inventoryService.GetOwnedInventoriesAsync(userId);
         var accessibleInventories = await _inventoryService.GetAccessibleInventoriesAsync(userId);
@@ -34,8 +36,34 @@ public class DashboardController : Controller
         ownedInventories = ApplySorting(ownedInventories, sortBy);
         otherAccessible = ApplySorting(otherAccessible, sortBy);
 
-        ViewBag.OwnedInventories = ownedInventories;
-        ViewBag.AccessibleInventories = otherAccessible;
+        // Calculate pagination for owned inventories
+        var ownedTotalCount = ownedInventories.Count;
+        var ownedTotalPages = (int)Math.Ceiling(ownedTotalCount / (double)pageSize);
+        var ownedPaginatedList = ownedInventories
+            .Skip((ownedPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        // Calculate pagination for accessible inventories
+        var accessibleTotalCount = otherAccessible.Count;
+        var accessibleTotalPages = (int)Math.Ceiling(accessibleTotalCount / (double)pageSize);
+        var accessiblePaginatedList = otherAccessible
+            .Skip((accessiblePage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        ViewBag.OwnedInventories = ownedPaginatedList;
+        ViewBag.OwnedCurrentPage = ownedPage;
+        ViewBag.OwnedTotalPages = ownedTotalPages;
+        ViewBag.OwnedTotalCount = ownedTotalCount;
+        ViewBag.OwnedPageSize = pageSize;
+
+        ViewBag.AccessibleInventories = accessiblePaginatedList;
+        ViewBag.AccessibleCurrentPage = accessiblePage;
+        ViewBag.AccessibleTotalPages = accessibleTotalPages;
+        ViewBag.AccessibleTotalCount = accessibleTotalCount;
+        ViewBag.AccessiblePageSize = pageSize;
+
         ViewBag.CurrentSort = sortBy;
         ViewBag.CurrentFilter = filterBy;
 

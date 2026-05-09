@@ -14,8 +14,9 @@
         @if (ViewBag.CanEdit)
         {
             <div class="col-md-4 text-end">
+                <a href="/Dashboard/Index" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Home</a>                
                 <a href="/Inventories/Edit/@Model.Id" class="btn btn-primary">Edit</a>
-                <a href="/Inventories/Settings/@Model.Id" class="btn btn-secondary">Settings</a>
+                <a href="/Inventories/Settings/@Model.Id" class="btn btn-warning">Settings</a>
             </div>
         }
     </div>
