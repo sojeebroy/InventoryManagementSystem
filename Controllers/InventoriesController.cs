@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Models.DTOs;
-using Inventory_Management_System.Services.Interfaces;
+using Inventory_Management_System.Services.Interfaces;  // ← ICloudinaryService lives here now
+using Inventory_Management_System.Services;
 using System.Text.Json;
 
 namespace Inventory_Management_System.Controllers;
@@ -17,6 +18,7 @@ public class InventoriesController : Controller
     private readonly IDiscussionService _discussionService;
     private readonly IStatisticsService _statisticsService;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ICloudinaryService _cloudinaryService;
 
     public InventoriesController(
         IInventoryService inventoryService,
@@ -24,7 +26,8 @@ public class InventoriesController : Controller
         IItemService itemService,
         IDiscussionService discussionService,
         IStatisticsService statisticsService,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        ICloudinaryService cloudinaryService)
     {
         _inventoryService = inventoryService;
         _authService = authService;
@@ -32,6 +35,7 @@ public class InventoriesController : Controller
         _discussionService = discussionService;
         _statisticsService = statisticsService;
         _userManager = userManager;
+        _cloudinaryService = cloudinaryService;
     }
 
     [AllowAnonymous]
@@ -41,17 +45,11 @@ public class InventoriesController : Controller
 
         List<Inventory> inventories;
         if (!string.IsNullOrEmpty(searchTerm))
-        {
             inventories = await _inventoryService.SearchInventoriesAsync(searchTerm);
-        }
         else if (!string.IsNullOrEmpty(userId))
-        {
             inventories = await _inventoryService.GetAccessibleInventoriesAsync(userId);
-        }
         else
-        {
             inventories = new List<Inventory>();
-        }
 
         const int pageSize = 10;
         var totalCount = inventories.Count;
@@ -79,7 +77,6 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
-        // Check access
         if (inventory.Visibility == VisibilityType.Private &&
             (string.IsNullOrEmpty(userId) ||
              (inventory.OwnerId != userId &&
@@ -88,7 +85,7 @@ public class InventoriesController : Controller
             return Forbid();
         }
 
-        ViewBag.CanEdit = !string.IsNullOrEmpty(userId) && 
+        ViewBag.CanEdit = !string.IsNullOrEmpty(userId) &&
             await _authService.CanEditInventoryAsync(id, userId);
         ViewBag.CanAddItems = ViewBag.CanEdit;
         ViewBag.UserId = userId;
@@ -111,12 +108,35 @@ public class InventoriesController : Controller
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
+        if (dto.ImageFile == null || dto.ImageFile.Length == 0)
+        {
+            ModelState.AddModelError("ImageFile", "Image file is required to create an inventory.");
+            return View(dto);
+        }
+
+        string? imageUrl = null;
+
+        try
+        {
+            imageUrl = await _cloudinaryService.UploadImageAsync(dto.ImageFile);
+        }
+        catch (ArgumentException ex)
+        {
+            ModelState.AddModelError("ImageFile", ex.Message);
+            return View(dto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError("ImageFile", ex.Message);
+            return View(dto);
+        }
+
         var inventory = new Inventory
         {
             Title = dto.Title,
             Description = dto.Description,
             Category = dto.Category,
-            ImageUrl = dto.ImageUrl,
+            ImageUrl = imageUrl,
             Visibility = Enum.Parse<VisibilityType>(dto.VisibilityType),
             OwnerId = userId,
             CustomIdFormat = JsonSerializer.Serialize(new List<CustomIdElement>())
@@ -124,11 +144,10 @@ public class InventoriesController : Controller
 
         var created = await _inventoryService.CreateInventoryAsync(inventory);
 
-        // Add tags if provided - create tags directly in database
         if (dto.Tags.Any())
         {
             foreach (var tagName in dto.Tags)
-            {                
+            {
                 if (!string.IsNullOrWhiteSpace(tagName))
                 {
                     var inventoryTag = new InventoryTag
@@ -136,14 +155,14 @@ public class InventoriesController : Controller
                         InventoryId = created.Id,
                         Tag = tagName.Trim()
                     };
-                    // Add directly to context and save
                     await _inventoryService.AddTagAsync(inventoryTag);
-                }           
+                }
             }
         }
 
         return RedirectToAction(nameof(Details), new { id = created.Id });
     }
+
 
     public async Task<IActionResult> Edit(int id)
     {
@@ -181,10 +200,30 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
+        string? imageUrl = dto.ImageUrl;
+
+        if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+        {
+            try
+            {
+                imageUrl = await _cloudinaryService.UploadImageAsync(dto.ImageFile);
+            }
+            catch (ArgumentException ex)
+            {
+                ModelState.AddModelError("ImageFile", ex.Message);
+                return View(dto);
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError("ImageFile", ex.Message);
+                return View(dto);
+            }
+        }
+
         inventory.Title = dto.Title;
         inventory.Description = dto.Description;
         inventory.Category = dto.Category;
-        inventory.ImageUrl = dto.ImageUrl;
+        inventory.ImageUrl = imageUrl;
         inventory.Visibility = Enum.Parse<VisibilityType>(dto.VisibilityType);
         inventory.UpdatedAt = DateTime.UtcNow;
         inventory.Version = dto.Version;
@@ -193,11 +232,9 @@ public class InventoriesController : Controller
         {
             await _inventoryService.UpdateInventoryAsync(inventory);
 
-            // Update tags - delete old ones and add new ones
             if (dto.Tags != null && dto.Tags.Any())
             {
                 await _inventoryService.DeleteInventoryTagsAsync(dto.Id);
-
                 foreach (var tagName in dto.Tags)
                 {
                     if (!string.IsNullOrWhiteSpace(tagName))
@@ -213,7 +250,6 @@ public class InventoriesController : Controller
             }
             else
             {
-                // If no tags provided, delete all existing tags
                 await _inventoryService.DeleteInventoryTagsAsync(dto.Id);
             }
 
@@ -225,6 +261,7 @@ public class InventoriesController : Controller
             return View(dto);
         }
     }
+
     public async Task<IActionResult> Delete(int id)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -243,9 +280,9 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
-        if (inventory.Visibility == VisibilityType.Private && 
-            (string.IsNullOrEmpty(userId) || 
-             (inventory.OwnerId != userId && 
+        if (inventory.Visibility == VisibilityType.Private &&
+            (string.IsNullOrEmpty(userId) ||
+             (inventory.OwnerId != userId &&
               !inventory.AccessControls.Any(ac => ac.UserId == userId))))
         {
             return Forbid();
@@ -255,7 +292,7 @@ public class InventoriesController : Controller
         var totalItems = await _itemService.GetInventoryItemsCountAsync(id);
 
         ViewBag.Inventory = inventory;
-        ViewBag.CanEdit = !string.IsNullOrEmpty(userId) && 
+        ViewBag.CanEdit = !string.IsNullOrEmpty(userId) &&
             await _authService.CanEditInventoryAsync(id, userId);
         ViewBag.UserId = userId;
         ViewBag.TotalPages = (int)Math.Ceiling(totalItems / 20.0);
@@ -272,9 +309,9 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
-        if (inventory.Visibility == VisibilityType.Private && 
-            (string.IsNullOrEmpty(userId) || 
-             (inventory.OwnerId != userId && 
+        if (inventory.Visibility == VisibilityType.Private &&
+            (string.IsNullOrEmpty(userId) ||
+             (inventory.OwnerId != userId &&
               !inventory.AccessControls.Any(ac => ac.UserId == userId))))
         {
             return Forbid();
@@ -309,9 +346,9 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
-        if (inventory.Visibility == VisibilityType.Private && 
-            (string.IsNullOrEmpty(userId) || 
-             (inventory.OwnerId != userId && 
+        if (inventory.Visibility == VisibilityType.Private &&
+            (string.IsNullOrEmpty(userId) ||
+             (inventory.OwnerId != userId &&
               !inventory.AccessControls.Any(ac => ac.UserId == userId))))
         {
             return Forbid();

@@ -9,7 +9,7 @@
         <div class="col-md-8 offset-md-2">
             <h1>Create New Inventory</h1>
 
-            <form asp-action="Create" method="post" class="mt-4">
+            <form id="createInventoryForm" asp-controller="Inventories" asp-action="Create" method="post" class="mt-4" enctype="multipart/form-data">
                 <div asp-validation-summary="All" class="alert alert-danger d-none"></div>
 
                 <div class="mb-3">
@@ -47,9 +47,16 @@
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="ImageUrl" class="form-label"></label>
-                    <input asp-for="ImageUrl" class="form-control" placeholder="Image URL (cloud storage)" type="url">
-                    <span asp-validation-for="ImageUrl" class="invalid-feedback"></span>
+                    <label asp-for="ImageFile" class="form-label">
+                        <span class="text-danger">*</span> Image File
+                    </label>
+                    <input asp-for="ImageFile" id="imageFileInput" type="file" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp" required>
+                    <small class="text-muted">Upload an image (jpg, jpeg, png, gif, webp) - Max 10MB</small>
+                    <span asp-validation-for="ImageFile" class="invalid-feedback d-block"></span>
+                </div>
+
+                <div class="mb-3">
+                    <img id="imagePreview" src="#" alt="Image preview" style="display: none; max-width: 300px; max-height: 300px; border-radius: 4px; margin-top: 10px;" />
                 </div>
 
                 <div class="mb-3">
@@ -68,3 +75,25 @@
     </div>
 </div>
 
+<script>
+    (function () {
+        const fileInput = document.getElementById('imageFileInput');
+        const imagePreview = document.getElementById('imagePreview');
+
+        fileInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    // Only update the preview img src, never touch the form
+                    imagePreview.setAttribute('src', event.target.result);
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.setAttribute('src', '#');
+                imagePreview.style.display = 'none';
+            }
+        });
+    })();
+</script>

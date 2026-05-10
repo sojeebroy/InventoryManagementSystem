@@ -4,11 +4,12 @@ using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Middleware;
 using Inventory_Management_System.Services.Interfaces;
+using Inventory_Management_System.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add database
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -22,7 +23,6 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequiredLength = 6;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = false;
-    // Allow external login to bypass password requirements
     options.User.RequireUniqueEmail = true;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -32,14 +32,13 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
     {
-        options.ClientId = builder.Configuration["Authentication:Google:ClientId"] 
+        options.ClientId = builder.Configuration["Authentication:Google:ClientId"]
             ?? throw new InvalidOperationException("Google ClientId not configured");
         options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]
             ?? throw new InvalidOperationException("Google ClientSecret not configured");
         options.SaveTokens = true;
         options.Events.OnTicketReceived += context =>
         {
-            // Store provider info for later use
             context.Properties.Items["LoginProvider"] = "Google";
             return Task.CompletedTask;
         };
@@ -53,7 +52,6 @@ builder.Services.AddAuthentication()
         options.SaveTokens = true;
         options.Events.OnTicketReceived += context =>
         {
-            // Store provider info for later use
             context.Properties.Items["LoginProvider"] = "Facebook";
             return Task.CompletedTask;
         };
@@ -66,6 +64,7 @@ builder.Services.AddScoped<IInventoryAuthorizationService, InventoryAuthorizatio
 builder.Services.AddScoped<ICustomIdService, CustomIdService>();
 builder.Services.AddScoped<IDiscussionService, DiscussionService>();
 builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();  
 
 // Add controllers and views
 builder.Services.AddControllersWithViews();
@@ -73,7 +72,6 @@ builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -88,7 +86,6 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Add blocked user middleware
 app.UseBlockedUserMiddleware();
 
 app.MapControllerRoute(
@@ -107,7 +104,6 @@ using (var scope = app.Services.CreateScope())
 
     context.Database.Migrate();
 
-    // Seed roles
     if (!await roleManager.RoleExistsAsync("Admin"))
         await roleManager.CreateAsync(new IdentityRole("Admin"));
     if (!await roleManager.RoleExistsAsync("User"))

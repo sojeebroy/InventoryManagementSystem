@@ -5,9 +5,9 @@ public class CreateInventoryDto
     public string Title { get; set; }
     public string Description { get; set; }
     public string Category { get; set; }
-    public string ImageUrl { get; set; }
     public string VisibilityType { get; set; }
     public string TagsInput { get; set; } = string.Empty;
+    public IFormFile? ImageFile { get; set; }
 
     // Helper property to parse tags from comma-separated string
     public List<string> Tags
@@ -30,6 +30,7 @@ public class UpdateInventoryDto
     public string? ImageUrl { get; set; }
     public string VisibilityType { get; set; } = "Private";
     public string TagsInput { get; set; } = string.Empty;
+    public IFormFile? ImageFile { get; set; }
     public int Version { get; set; }
 
     // Helper property to parse tags from comma-separated string

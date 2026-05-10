@@ -9,7 +9,7 @@
         <div class="col-md-8 offset-md-2">
             <h1>Edit Inventory</h1>
 
-            <form asp-action="Edit" method="post" class="mt-4">
+            <form asp-controller="Inventories" asp-action="Edit" method="post" class="mt-4" enctype="multipart/form-data">
                 <input asp-for="Id" type="hidden" />
                 <input asp-for="Version" type="hidden" />
 
@@ -51,17 +51,32 @@
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="ImageUrl" class="form-label"></label>
-                    <input asp-for="ImageUrl" type="url" class="form-control" placeholder="Image URL (cloud storage)">
-                    <span asp-validation-for="ImageUrl" class="invalid-feedback"></span>
+                    <label asp-for="ImageFile" class="form-label"></label>
+                    <input asp-for="ImageFile" type="file" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp">
+                    <small class="text-muted">Upload a new image to replace the current one (jpg, jpeg, png, gif, webp) - Max 10MB</small>
+                    <span asp-validation-for="ImageFile" class="invalid-feedback d-block"></span>
+                </div>
+
+                <div class="mb-3">
+                    <img id="imagePreview" src="" alt="Image preview" style="display: none; max-width: 300px; max-height: 300px; border-radius: 4px; margin-top: 10px;" />
                 </div>
 
                 @if (!string.IsNullOrEmpty(Model.ImageUrl))
                 {
                     <div class="mb-3">
-                        <img src="@Model.ImageUrl" class="img-fluid" style="max-height: 200px;" />
+                        <label>Current Image:</label>
+                        <div>
+                            <img src="@Model.ImageUrl" class="img-fluid" style="max-height: 200px; border-radius: 4px;" />
+                        </div>
                     </div>
                 }
+
+                <div class="mb-3">
+                    <label asp-for="ImageUrl" class="form-label"></label>
+                    <input asp-for="ImageUrl" type="url" class="form-control" placeholder="Or provide an image URL (cloud storage)">
+                    <small class="text-muted">Only used if no file is uploaded</small>
+                    <span asp-validation-for="ImageUrl" class="invalid-feedback"></span>
+                </div>
 
                 <div class="mb-3">
                     <label asp-for="TagsInput" class="form-label"></label>
@@ -78,3 +93,24 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const fileInput = document.querySelector('input[type="file"]');
+        const imagePreview = document.getElementById('imagePreview');
+
+        fileInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    imagePreview.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.style.display = 'none';
+            }
+        });
+    });
+</script>
