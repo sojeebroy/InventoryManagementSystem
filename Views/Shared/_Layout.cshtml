@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Inventory_Management_System.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
@@ -18,14 +17,21 @@
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <form class="search-bar mx-auto" method="get" asp-controller="Inventories" asp-action="Index" role="search">
-                        <div class="input-group">
-                            <input class="form-control" type="text" name="searchTerm" placeholder="Search..." value="@ViewBag.SearchTerm">
-                            <button class="btn btn-outline-secondary" type="submit">🔍</button>
-                        </div>
+                <div class="navbar-collapse collapse">
+                    <form asp-controller="Home" asp-action="Search" method="get" class="d-flex mx-auto" role="search" style="flex: 1; justify-content: center; gap: 0.5rem;">
+                        <input 
+                            class="form-control" 
+                            type="search" 
+                            name="query"
+                            placeholder="Search inventories..." 
+                            aria-label="Search"
+                            required
+                            minlength="1"
+                            pattern=".*\S.*"
+                            style="max-width: 400px;">
+                        <button class="btn btn-outline-primary" type="submit">Search</button>
                     </form>
-                    <ul class="navbar-nav">
+                    <ul class="navbar-nav ms-auto">
                         @if (User.Identity?.IsAuthenticated ?? false)
                         {
                             <li class="nav-item">
@@ -79,12 +85,13 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2026 - Inventory Manager - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2026 - Inventory Manager - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <script src="/_framework/aspnetcore-browser-refresh.js"></script>
 </body>
 </html>

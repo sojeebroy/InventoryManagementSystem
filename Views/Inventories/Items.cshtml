@@ -1,274 +1,744 @@
 @using Inventory_Management_System.Models
 @model List<Item>
 @{
+    ViewData["Title"] = "Items";
     var inventory = (Inventory)ViewBag.Inventory;
     var canEdit = (bool)ViewBag.CanEdit;
-    var userId = (string)ViewBag.UserId;
+    var userId = (string?)ViewBag.UserId ?? "";
     var totalPages = (int)ViewBag.TotalPages;
     var currentPage = (int)ViewBag.CurrentPage;
+    var totalItems = (int)ViewBag.TotalItems;
+    bool isAuthenticated = !string.IsNullOrEmpty(userId);
 }
 
-<div class="mb-3">
-    @if (canEdit)
-    {
-        <button class="btn btn-primary" id="addItemBtn">+ Add Item</button>
-    }
-    <form class="d-inline" method="get" asp-controller="Inventories" asp-action="Items" asp-route-id="@inventory.Id">
-        <div class="input-group d-inline-flex" style="width: auto;">
-            <input type="text" name="search" class="form-control" placeholder="Search items..." value="">
-            <button class="btn btn-outline-secondary" type="submit">Search</button>
+<link rel="stylesheet" href="~/css/items.css" />
+
+<div class="container-main">
+    <div id="flashContainer"></div>
+
+    <div class="items-header">
+        <div>
+            <h1>@inventory.Title — Items</h1>
+            <span class="items-meta">@totalItems item@(totalItems != 1 ? "s" : "") total &nbsp;·&nbsp; Page @currentPage of @(totalPages < 1 ? 1 : totalPages)</span>
         </div>
-    </form>
-</div>
-
-@if (!Model.Any())
-{
-    <div class="empty-state">
-        <p class="text-muted">No items in this inventory yet</p>
-        @if (canEdit)
-        {
-            <button class="btn btn-primary" id="addItemBtn2">+ Add Your First Item</button>
-        }
-    </div>
-}
-else
-{
-    <div class="table-responsive-custom">
-        <table class="table table-hover table-sm">
-            <thead class="table-light">
-                <tr>
-                    <th>Custom ID</th>
-                    @foreach (var field in inventory.CustomFields.Where(f => f.IsVisibleInTable))
-                    {
-                        <th>@field.Title</th>
-                    }
-                    <th>Created By</th>
-                    <th>Created</th>
-                    <th>Likes</th>
-                    @if (canEdit)
-                    {
-                        <th></th>
-                    }
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
+       
+        <div class="d-flex flex-column gap-2">
+            <div class="d-flex gap-1 ms-auto">
+                <a href="/Inventories/Details/@inventory.Id" class="btn btn-secondary btn-sm">← Back</a>
+                @if (canEdit)
                 {
+                    <button class="btn btn-primary btn-sm" id="addItemBtn">+ Add Item</button>
+                }
+           </div>
+
+            <div class="d-flex gap-1 ms-auto">
+                <form class="d-inline" method="get" asp-controller="Inventories" asp-action="Items" asp-route-id="@inventory.Id">
+                    <div class="input-group d-inline-flex" style="width: auto;">
+                        <input type="text" name="search" class="form-control" placeholder="Search items..." value="">
+                        <button class="btn btn-outline-secondary" type="submit">Search</button>
+                    </div>
+                </form>
+           </div>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">📦</div>
+            <p>No items in this inventory yet.</p>
+            @if (canEdit)
+            {
+                <button class="btn btn-primary btn-sm" id="addFirstItem">+ Add First Item</button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="items-table-wrap">
+            <table class="items-table" id="itemsTable">
+                <thead>
                     <tr>
-                        <td>
-                            <strong>@item.CustomId</strong>
-                        </td>
-                        @foreach (var field in inventory.CustomFields.Where(f => f.IsVisibleInTable))
-                        {
-                            <td>
-                                @GetFieldValue(item, field)
-                            </td>
-                        }
-                        <td>
-                            <small>@item.CreatedBy?.UserName</small>
-                        </td>
-                        <td>
-                            <small>@item.CreatedAt.ToString("MMM dd")</small>
-                        </td>
-                        <td>
-                            <span class="like-count" data-item-id="@item.Id">0</span> ❤️
-                        </td>
                         @if (canEdit)
                         {
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-outline-primary editItemBtn" data-item-id="@item.Id">Edit</button>
-                                <button class="btn btn-sm btn-outline-danger deleteItemBtn" data-item-id="@item.Id">Delete</button>
-                            </td>
+                            <th class="cb-col"></th>
                         }
+                        <th>ID</th>
+                        <th>Created By</th>
+                        @foreach (var field in inventory.CustomFields.Where(f => f.IsVisibleInTable).OrderBy(f => f.DisplayOrder))
+                        {
+                            <th>@field.Title</th>
+                        }
+                        <th>Created</th>
+                        <th>Likes</th>
                     </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Pagination -->
-    @if (totalPages > 1)
-    {
-        <nav aria-label="Page navigation" class="mt-3">
-            <ul class="pagination justify-content-center">
-                @if (currentPage > 1)
-                {
-                    <li class="page-item">
-                        <a class="page-link" href="/Inventories/Items/@inventory.Id?page=1">First</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="/Inventories/Items/@inventory.Id?page=@(currentPage - 1)">Previous</a>
-                    </li>
-                }
-
-                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
-                {
-                    @if (i == currentPage)
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
                     {
-                        <li class="page-item active"><span class="page-link">@i</span></li>
+                        <tr class="item-row" data-item-id="@item.Id">
+                            @if (canEdit)
+                            {
+                                <td class="cb-col">
+                                    <input type="checkbox" class="item-checkbox" value="@item.Id" aria-label="Select item @item.CustomId">
+                                </td>
+                            }
+                            <td><span class="custom-id-badge">@item.CustomId</span></td>
+                            <td>@(item.CreatedBy?.UserName ?? "—")</td>
+                            @foreach (var field in inventory.CustomFields.Where(f => f.IsVisibleInTable).OrderBy(f => f.DisplayOrder))
+                            {
+                                <td>@Html.Raw(GetFieldDisplay(item, field))</td>
+                            }
+                            <td class="date-cell" title="@item.CreatedAt.ToString("yyyy-MM-dd HH:mm")">
+                                @item.CreatedAt.ToString("MMM dd, yyyy")
+                            </td>
+                            <td>
+                                <button class="like-btn"
+                                        data-item-id="@item.Id"
+                                        data-liked="false"
+                                        aria-label="Like item"
+                                        @(!isAuthenticated ? "title='Sign in to like items'" : "")>
+                                    <span class="heart-icon">♡</span>
+                                    <span class="like-count">…</span>
+                                </button>
+                            </td>
+                        </tr>
                     }
-                    else
-                    {
-                        <li class="page-item"><a class="page-link" href="/Inventories/Items/@inventory.Id?page=@i">@i</a></li>
-                    }
-                }
+                </tbody>
+            </table>
 
-                @if (currentPage < totalPages)
-                {
-                    <li class="page-item">
-                        <a class="page-link" href="/Inventories/Items/@inventory.Id?page=@(currentPage + 1)">Next</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="/Inventories/Items/@inventory.Id?page=@totalPages">Last</a>
-                    </li>
-                }
-            </ul>
-        </nav>
+            <!-- Pagination — always visible -->
+            <div class="pagination-wrap">
+                <span class="pagination-info">
+                    Showing @((currentPage - 1) * 5 + 1)–@(Math.Min(currentPage * 5, totalItems)) of @totalItems item@(totalItems != 1 ? "s" : "")
+                </span>
+                <div class="pagination-controls">
+                    @{
+                        var safeTotal = Math.Max(totalPages, 1);
+                    }
+                    <a class="page-btn @(currentPage <= 1 ? "disabled" : "")"
+                       href="/Inventories/Items/@inventory.Id?page=1"
+                       aria-label="First page">«</a>
+                    <a class="page-btn @(currentPage <= 1 ? "disabled" : "")"
+                       href="/Inventories/Items/@inventory.Id?page=@(currentPage - 1)"
+                       aria-label="Previous page">‹</a>
+
+                    @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(safeTotal, currentPage + 2); i++)
+                    {
+                        if (i == currentPage)
+                        {
+                            <span class="page-btn active">@i</span>
+                        }
+                        else
+                        {
+                            <a class="page-btn" href="/Inventories/Items/@inventory.Id?page=@i">@i</a>
+                        }
+                    }
+
+                    <a class="page-btn @(currentPage >= safeTotal ? "disabled" : "")"
+                       href="/Inventories/Items/@inventory.Id?page=@(currentPage + 1)"
+                       aria-label="Next page">›</a>
+                    <a class="page-btn @(currentPage >= safeTotal ? "disabled" : "")"
+                       href="/Inventories/Items/@inventory.Id?page=@safeTotal"
+                       aria-label="Last page">»</a>
+                </div>
+            </div>
+        </div>
+
+        @if (canEdit)
+        {
+            <div id="toolbox" class="toolbox d-none" role="toolbar" aria-label="Item actions">
+                <span class="toolbox-label" id="selCount">0 selected</span>
+                <button class="btn btn-sm btn-outline-primary" id="editBtn" disabled>✏️ Edit</button>
+                <button class="btn btn-sm btn-outline-danger" id="deleteBtn">🗑 Delete</button>
+                <button class="btn btn-sm btn-outline-secondary" id="clearBtn">✕ Clear</button>
+            </div>
+        }
     }
-}
+</div>
 
-<!-- Add/Edit Item Modal -->
-<div class="modal fade" id="itemModal" tabindex="-1">
-    <div class="modal-dialog">
+<!-- Add / Edit Modal -->
+<div class="modal fade" id="itemModal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="itemModalTitle">Add Item</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="itemModalLabel">Add Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="itemForm">
+                @if (!inventory.CustomFields.Any())
+                {
+                    <p class="text-muted text-center py-3">This inventory has no custom fields defined yet.</p>
+                }
+                <div id="itemFormFields">
                     @foreach (var field in inventory.CustomFields.OrderBy(f => f.DisplayOrder))
                     {
                         <div class="mb-3">
-                            <label class="form-label">@field.Title</label>
+                            <label class="form-label fw-semibold" for="field_@field.FieldName">
+                                @field.Title
+                            </label>
                             @if (!string.IsNullOrEmpty(field.Description))
                             {
-                                <small class="form-text text-muted d-block">@field.Description</small>
+                                <small class="text-muted d-block mb-1">@field.Description</small>
                             }
-                            @GetFieldInput(field)
+                            @Html.Raw(GetFieldInput(field))
                         </div>
                     }
-                </form>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveItemBtn">Save</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" id="saveBtn">Save Item</button>
             </div>
         </div>
     </div>
 </div>
 
 @functions {
-    private string GetFieldValue(Item item, CustomField field)
+    /// <summary>Returns the field slot index for a given field and its type-based position.</summary>
+    private static int GetSlotIndex(ICollection<CustomField> allFields, CustomField target)
     {
-        var fieldName = field.FieldName ?? $"Custom{field.FieldType}{field.DisplayOrder}Value";
+        // Count how many fields of the same type come before this one (by DisplayOrder)
+        int idx = allFields
+            .Where(f => f.FieldType == target.FieldType && f.DisplayOrder < target.DisplayOrder)
+            .Count() + 1; // 1-based
+        return idx;
+    }
 
+    private string GetFieldDisplay(Item item, CustomField field)
+    {
         return field.FieldType switch
         {
-            CustomFieldType.SingleLineText => item.CustomString1Value ?? "-",
-            CustomFieldType.MultiLineText => item.CustomText1Value?.Substring(0, Math.Min(30, item.CustomText1Value.Length)) + "..." ?? "-",
-            CustomFieldType.Numeric => item.CustomNumber1Value?.ToString() ?? "-",
-            CustomFieldType.Boolean => (item.CustomBool1Value ?? false) ? "Yes" : "No",
-            CustomFieldType.Link => $"<a href=\"{item.CustomLink1Value}\" target=\"_blank\">Link</a>",
-            _ => "-"
+            CustomFieldType.SingleLineText => GetStringFieldValue(item, field),
+            CustomFieldType.MultiLineText => GetTextFieldValue(item, field),
+            CustomFieldType.Numeric => GetNumberFieldValue(item, field),
+            CustomFieldType.Boolean => GetBoolFieldValue(item, field),
+            CustomFieldType.Link => GetLinkFieldValue(item, field),
+            _ => "—"
         };
+    }
+
+    private string GetStringFieldValue(Item item, CustomField field)
+    {
+        var values = new[] { item.CustomString1Value, item.CustomString2Value, item.CustomString3Value };
+        var idx = GetSlotIndex(item.Inventory!.CustomFields, field) - 1;
+        return Escape(idx < values.Length ? values[idx] : null);
+    }
+
+    private string GetTextFieldValue(Item item, CustomField field)
+    {
+        var values = new[] { item.CustomText1Value, item.CustomText2Value, item.CustomText3Value };
+        var idx = GetSlotIndex(item.Inventory!.CustomFields, field) - 1;
+        return Truncate(idx < values.Length ? values[idx] : null);
+    }
+
+    private string GetNumberFieldValue(Item item, CustomField field)
+    {
+        var values = new[] { item.CustomNumber1Value, item.CustomNumber2Value, item.CustomNumber3Value };
+        var idx = GetSlotIndex(item.Inventory!.CustomFields, field) - 1;
+        if (idx >= values.Length || !values[idx].HasValue) return "—";
+        return $"<span class='cell-truncate'>{System.Web.HttpUtility.HtmlEncode(values[idx].ToString())}</span>";
+    }
+
+    private string GetBoolFieldValue(Item item, CustomField field)
+    {
+        var values = new[] { item.CustomBool1Value, item.CustomBool2Value, item.CustomBool3Value };
+        var idx = GetSlotIndex(item.Inventory!.CustomFields, field) - 1;
+        return BoolDisplay(idx < values.Length ? values[idx] : null);
+    }
+
+    private string GetLinkFieldValue(Item item, CustomField field)
+    {
+        var values = new[] { item.CustomLink1Value, item.CustomLink2Value, item.CustomLink3Value };
+        var idx = GetSlotIndex(item.Inventory!.CustomFields, field) - 1;
+        return LinkDisplay(idx < values.Length ? values[idx] : null);
+    }
+
+    private static string Escape(string? val) =>
+        string.IsNullOrWhiteSpace(val) ? "—" :
+        $"<span class='cell-truncate' title='{System.Web.HttpUtility.HtmlAttributeEncode(val)}'>{System.Web.HttpUtility.HtmlEncode(val)}</span>";
+
+    private static string Truncate(string? val)
+    {
+        if (string.IsNullOrWhiteSpace(val)) return "—";
+        var display = val.Length > 40 ? val[..40] + "…" : val;
+        return $"<span class='cell-truncate' title='{System.Web.HttpUtility.HtmlAttributeEncode(val)}'>{System.Web.HttpUtility.HtmlEncode(display)}</span>";
+    }
+
+    private static string BoolDisplay(bool? val) =>
+        val == true ? "<span class='bool-yes'>✓</span>" : "<span class='bool-no'>✗</span>";
+
+    private static string LinkDisplay(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return "—";
+        var encoded = System.Web.HttpUtility.HtmlAttributeEncode(url);
+        return $"<span class='cell-link'><a href='{encoded}' target='_blank' rel='noopener noreferrer'>↗ Link</a></span>";
     }
 
     private string GetFieldInput(CustomField field)
     {
+        // Map field names to their corresponding DTO property names
+        var fieldToProperty = new Dictionary<string, string>
+        {
+            { "CustomString1", "CustomString1Value" },
+            { "CustomString2", "CustomString2Value" },
+            { "CustomString3", "CustomString3Value" },
+            { "CustomText1", "CustomText1Value" },
+            { "CustomText2", "CustomText2Value" },
+            { "CustomText3", "CustomText3Value" },
+            { "CustomNumber1", "CustomNumber1Value" },
+            { "CustomNumber2", "CustomNumber2Value" },
+            { "CustomNumber3", "CustomNumber3Value" },
+            { "CustomBool1", "CustomBool1Value" },
+            { "CustomBool2", "CustomBool2Value" },
+            { "CustomBool3", "CustomBool3Value" },
+            { "CustomLink1", "CustomLink1Value" },
+            { "CustomLink2", "CustomLink2Value" },
+            { "CustomLink3", "CustomLink3Value" }
+        };
+
+        var propName = fieldToProperty.ContainsKey(field.FieldName) 
+            ? fieldToProperty[field.FieldName] 
+            : field.FieldName;
+
+        var id = $"field_{System.Web.HttpUtility.HtmlAttributeEncode(propName)}";
+        var name = System.Web.HttpUtility.HtmlAttributeEncode(propName);
+
         return field.FieldType switch
         {
-            CustomFieldType.SingleLineText => $"<input type=\"text\" class=\"form-control\" name=\"{field.FieldName}\">",
-            CustomFieldType.MultiLineText => $"<textarea class=\"form-control\" rows=\"3\" name=\"{field.FieldName}\"></textarea>",
-            CustomFieldType.Numeric => $"<input type=\"number\" step=\"0.01\" class=\"form-control\" name=\"{field.FieldName}\">",
-            CustomFieldType.Boolean => $"<input type=\"checkbox\" class=\"form-check-input\" name=\"{field.FieldName}\">",
-            CustomFieldType.Link => $"<input type=\"url\" class=\"form-control\" name=\"{field.FieldName}\">",
-            _ => "<input type=\"text\" class=\"form-control\" name=\"field\">"
+            CustomFieldType.SingleLineText =>
+                $"<input type='text' class='form-control form-control-sm' id='{id}' name='{name}'>",
+            CustomFieldType.MultiLineText =>
+                $"<textarea class='form-control form-control-sm' rows='3' id='{id}' name='{name}'></textarea>",
+            CustomFieldType.Numeric =>
+                $"<input type='number' step='any' class='form-control form-control-sm' id='{id}' name='{name}'>",
+            CustomFieldType.Boolean =>
+                $"<div class='form-check'><input type='checkbox' class='form-check-input' id='{id}' name='{name}'><label class='form-check-label' for='{id}'>Yes</label></div>",
+            CustomFieldType.Link =>
+                $"<input type='url' class='form-control form-control-sm' id='{id}' name='{name}' placeholder='https://'>",
+            _ =>
+                $"<input type='text' class='form-control form-control-sm' id='{id}' name='{name}'>"
         };
     }
 }
 
-@section Scripts {
-    <script>
-        const inventoryId = @inventory.Id;
-        const itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
+<script>
+(function () {
+    'use strict';
 
-        document.getElementById('addItemBtn')?.addEventListener('click', () => {
-            document.getElementById('itemModalTitle').textContent = 'Add Item';
-            document.getElementById('itemForm').reset();
-            document.getElementById('itemForm').dataset.itemId = '';
-            itemModal.show();
+    const INV_ID     = "@inventory.Id";
+    const USER_ID    = '@userId.Replace("'", "\\'")';
+    const CAN_EDIT   = '@(canEdit ? "true" : "false")';
+    const IS_AUTH    = '@(isAuthenticated ? "true" : "false")';
+
+    let bsModal = null;
+    let editingItemId = null; // null = add mode, number = edit mode
+
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const modalEl = document.getElementById('itemModal');
+        if (modalEl) bsModal = new bootstrap.Modal(modalEl);
+
+        bindAddButtons();
+        bindSave();
+        bindCheckboxes();
+        bindToolbox();
+        loadAllLikes();
+        bindLikeButtons();
+    });
+
+   
+    function bindAddButtons() {
+        document.getElementById('addItemBtn')?.addEventListener('click', openAddModal);
+        document.getElementById('addFirstItem')?.addEventListener('click', openAddModal);
+    }
+
+    function openAddModal() {
+        editingItemId = null;
+        resetForm();
+        document.getElementById('itemModalLabel').textContent = 'Add Item';
+        document.getElementById('saveBtn').textContent = 'Save Item';
+        bsModal?.show();
+    }
+
+    function openEditModal(itemId) {
+        editingItemId = itemId;
+        document.getElementById('itemModalLabel').textContent = 'Edit Item';
+        document.getElementById('saveBtn').textContent = 'Update Item';
+        fetchItemForEdit(itemId);
+    }
+
+    function resetForm() {
+        document.querySelectorAll('#itemFormFields input, #itemFormFields textarea, #itemFormFields select').forEach(el => {
+            if (el.type === 'checkbox') el.checked = false;
+            else el.value = '';
         });
+    }
 
-        document.getElementById('addItemBtn2')?.addEventListener('click', () => {
-            document.getElementById('itemModalTitle').textContent = 'Add Item';
-            document.getElementById('itemForm').reset();
-            document.getElementById('itemForm').dataset.itemId = '';
-            itemModal.show();
-        });
+    async function fetchItemForEdit(itemId) {
+        try {
+            const resp = await fetch(`/api/items/${itemId}`);
+            if (!resp.ok) throw new Error('Failed to fetch item');
+            const item = await resp.json();
+            resetForm();
 
-        document.getElementById('saveItemBtn').addEventListener('click', async () => {
-            const formData = new FormData(document.getElementById('itemForm'));
-            const itemId = document.getElementById('itemForm').dataset.itemId;
+            // Map custom field values to form inputs by field name
+            const fieldMap = {
+                customString1Value: 'CustomString1Value',
+                customString2Value: 'CustomString2Value',
+                customString3Value: 'CustomString3Value',
+                customText1Value: 'CustomText1Value',
+                customText2Value: 'CustomText2Value',
+                customText3Value: 'CustomText3Value',
+                customNumber1Value: 'CustomNumber1Value',
+                customNumber2Value: 'CustomNumber2Value',
+                customNumber3Value: 'CustomNumber3Value',
+                customBool1Value: 'CustomBool1Value',
+                customBool2Value: 'CustomBool2Value',
+                customBool3Value: 'CustomBool3Value',
+                customLink1Value: 'CustomLink1Value',
+                customLink2Value: 'CustomLink2Value',
+                customLink3Value: 'CustomLink3Value'
+            };
 
-            const dto = { inventoryId };
-            formData.forEach((value, key) => {
-                dto[key] = value;
+            Object.entries(fieldMap).forEach(([apiKey, dtoKey]) => {
+                if (item.hasOwnProperty(dtoKey)) {
+                    const el = document.querySelector(`[name="${dtoKey}"]`);
+                    if (!el) return;
+                    if (el.type === 'checkbox') el.checked = !!item[dtoKey];
+                    else if (item[dtoKey] != null) el.value = item[dtoKey];
+                }
             });
 
-            try {
-                const method = itemId ? 'PUT' : 'POST';
-                const url = itemId ? `/api/items/${itemId}` : '/api/items';
+            bsModal?.show();
+        } catch (err) {
+            console.error('Error fetching item:', err);
+            showFlash('Could not load item data. Please try again.', 'error');
+        }
+    }
 
-                const response = await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dto)
-                });
+    
+    function bindSave() {
+        document.getElementById('saveBtn')?.addEventListener('click', saveItem);
+    }
 
-                if (response.ok) {
-                    itemModal.hide();
-                    location.reload();
+    async function saveItem() {
+        const saveBtn = document.getElementById('saveBtn');
+        const isEdit  = editingItemId !== null;
+        const url     = isEdit ? `/api/items/${editingItemId}` : '/api/items';
+        const method  = isEdit ? 'PUT' : 'POST';
+
+        // Build DTO from form
+        const dto = { inventoryId: INV_ID };
+
+        // Collect form values with proper property names
+        const fieldMap = {
+            'CustomString1Value': 'CustomString1Value',
+            'CustomString2Value': 'CustomString2Value',
+            'CustomString3Value': 'CustomString3Value',
+            'CustomText1Value': 'CustomText1Value',
+            'CustomText2Value': 'CustomText2Value',
+            'CustomText3Value': 'CustomText3Value',
+            'CustomNumber1Value': 'CustomNumber1Value',
+            'CustomNumber2Value': 'CustomNumber2Value',
+            'CustomNumber3Value': 'CustomNumber3Value',
+            'CustomBool1Value': 'CustomBool1Value',
+            'CustomBool2Value': 'CustomBool2Value',
+            'CustomBool3Value': 'CustomBool3Value',
+            'CustomLink1Value': 'CustomLink1Value',
+            'CustomLink2Value': 'CustomLink2Value',
+            'CustomLink3Value': 'CustomLink3Value'
+        };
+
+        Object.keys(fieldMap).forEach(propName => {
+            const el = document.querySelector(`[name="${propName}"]`);
+            if (el) {
+                if (el.type === 'checkbox') {
+                    dto[propName] = el.checked;
+                } else if (el.type === 'number') {
+                    const val = el.value.trim();
+                    dto[propName] = val ? parseFloat(val) : null;
                 } else {
-                    alert('Error saving item');
+                    const val = el.value.trim();
+                    dto[propName] = val || null;
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error saving item');
             }
         });
 
-        document.querySelectorAll('.deleteItemBtn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                if (confirm('Are you sure you want to delete this item?')) {
-                    try {
-                        const response = await fetch(`/api/items/${e.target.dataset.itemId}`, {
-                            method: 'DELETE'
-                        });
+        // Add ID and Version for edit
+        if (isEdit) {
+            dto.id = editingItemId;
+            dto.version = 1; // Could be retrieved from form if needed
+        }
 
-                        if (response.ok) {
-                            location.reload();
-                        } else {
-                            alert('Error deleting item');
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        alert('Error deleting item');
-                    }
+        // Spinner state
+        saveBtn.disabled = true;
+        saveBtn.classList.add('btn-saving');
+        saveBtn.innerHTML = '<span class="spinner"></span>' + (isEdit ? 'Updating…' : 'Saving…');
+
+        try {
+            const resp = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getAntiForgeryToken()
+                },
+                body: JSON.stringify(dto)
+            });
+
+            if (resp.ok) {
+                bsModal?.hide();
+                // Show success flash BEFORE reload so it doesn't disappear
+                sessionStorage.setItem('_flashMsg', isEdit ? 'Item updated successfully.' : 'Item added to inventory successfully.');
+                location.reload();
+            } else {
+                const body = await resp.text().catch(() => '');
+                showFlash(body || `Error ${resp.status}: Could not save item.`, 'error');
+            }
+        } catch (err) {
+            console.error('Save error:', err);
+            showFlash('Network error. Please try again.', 'error');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.classList.remove('btn-saving');
+            saveBtn.textContent = isEdit ? 'Update Item' : 'Save Item';
+        }
+    }
+
+    /* Restore flash message after reload */
+    (function restoreFlash() {
+        const msg = sessionStorage.getItem('_flashMsg');
+        if (msg) {
+            sessionStorage.removeItem('_flashMsg');
+            // Wait for DOMContentLoaded handled above; show after paint
+            document.addEventListener('DOMContentLoaded', () => showFlash(msg, 'success'));
+        }
+    })();
+
+    /* ------------------------------------------------------------------ */
+    /* Checkboxes — single selection only                                    */
+    /* ------------------------------------------------------------------ */
+    function bindCheckboxes() {
+        if (!CAN_EDIT) return;
+
+        document.querySelectorAll('.item-checkbox').forEach(cb => {
+            cb.addEventListener('change', function () {
+                if (this.checked) {
+                    // Deselect all others (single-select)
+                    document.querySelectorAll('.item-checkbox').forEach(other => {
+                        if (other !== this) other.checked = false;
+                    });
                 }
+                syncRowHighlight();
+                updateToolbox();
             });
         });
+    }
 
-        // Load like counts
-        document.querySelectorAll('.like-count').forEach(async (span) => {
-            const itemId = span.dataset.itemId;
-            try {
-                const response = await fetch(`/api/items/${itemId}/likes`);
-                const data = await response.json();
-                span.textContent = data.count;
-            } catch (error) {
-                console.error('Error loading like count:', error);
-            }
+    function syncRowHighlight() {
+        document.querySelectorAll('.item-row').forEach(row => {
+            const cb = row.querySelector('.item-checkbox');
+            row.classList.toggle('row-selected', cb?.checked ?? false);
         });
-    </script>
-}
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Toolbox                                                               */
+    /* ------------------------------------------------------------------ */
+    function bindToolbox() {
+        if (!CAN_EDIT) return;
+
+        document.getElementById('editBtn')?.addEventListener('click', () => {
+            const cb = document.querySelector('.item-checkbox:checked');
+            if (cb) openEditModal(Number(cb.value));
+        });
+
+        document.getElementById('deleteBtn')?.addEventListener('click', deleteSelected);
+
+        document.getElementById('clearBtn')?.addEventListener('click', () => {
+            document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = false);
+            syncRowHighlight();
+            updateToolbox();
+        });
+    }
+
+    function updateToolbox() {
+        const checked = document.querySelectorAll('.item-checkbox:checked').length;
+        const toolbox = document.getElementById('toolbox');
+        if (!toolbox) return;
+
+        if (checked === 0) {
+            toolbox.classList.add('d-none');
+        } else {
+            toolbox.classList.remove('d-none');
+            const label = document.getElementById('selCount');
+            if (label) label.textContent = `${checked} selected`;
+
+            // Edit only enabled for exactly 1 selected
+            const editBtn = document.getElementById('editBtn');
+            if (editBtn) editBtn.disabled = checked !== 1;
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Delete                                                                */
+    /* ------------------------------------------------------------------ */
+    async function deleteSelected() {
+        const cbs = [...document.querySelectorAll('.item-checkbox:checked')];
+        if (!cbs.length) return;
+
+        const count = cbs.length;
+        const confirmed = confirm(`Delete ${count} item${count > 1 ? 's' : ''}? This cannot be undone.`);
+        if (!confirmed) return;
+
+        const deleteBtn = document.getElementById('deleteBtn');
+        if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.textContent = 'Deleting…'; }
+
+        let errors = 0;
+        for (const cb of cbs) {
+            try {
+                const r = await fetch(`/api/items/${cb.value}`, {
+                    method: 'DELETE',
+                    headers: { 'RequestVerificationToken': getAntiForgeryToken() }
+                });
+                if (!r.ok) errors++;
+            } catch {
+                errors++;
+            }
+        }
+
+        const msg = errors
+            ? `Deleted with ${errors} error(s). Page will refresh.`
+            : `${count} item${count > 1 ? 's' : ''} deleted successfully.`;
+        sessionStorage.setItem('_flashMsg', msg);
+        location.reload();
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Likes                                                                 */
+    /* ------------------------------------------------------------------ */
+    function bindLikeButtons() {
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.addEventListener('click', toggleLike);
+        });
+    }
+
+    async function loadAllLikes() {
+        const buttons = document.querySelectorAll('.like-btn');
+        // Fetch all item like states in parallel
+        await Promise.all([...buttons].map(btn => loadItemLikes(btn)));
+    }
+
+    async function loadItemLikes(btn) {
+        const itemId = btn.dataset.itemId;
+        try {
+            const resp = await fetch(`/api/items/${itemId}/likes`);
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            btn.querySelector('.like-count').textContent = data.count ?? 0;
+
+            // data.userLiked or data.isLiked = whether the current authenticated user already liked
+            const userLiked = IS_AUTH && (!!data.userLiked || !!data.isLiked);
+            btn.dataset.liked = userLiked ? 'true' : 'false';
+            btn.querySelector('.heart-icon').textContent = userLiked ? '♥' : '♡';
+            btn.classList.toggle('liked', userLiked);
+        } catch (err) {
+            console.error('Error loading likes:', err);
+            btn.querySelector('.like-count').textContent = '—';
+        }
+    }
+
+    async function toggleLike(e) {
+        const btn = e.currentTarget;
+
+        if (!IS_AUTH) {
+            showFlash('Please sign in to like items.', 'error');
+            return;
+        }
+
+        const itemId = btn.dataset.itemId;
+
+        // Optimistic UI
+        const wasLiked = btn.dataset.liked === 'true';
+        const countEl  = btn.querySelector('.like-count');
+        const heartEl  = btn.querySelector('.heart-icon');
+        const prevCount = parseInt(countEl.textContent, 10) || 0;
+
+        btn.dataset.liked = wasLiked ? 'false' : 'true';
+        countEl.textContent = wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1;
+        heartEl.textContent = wasLiked ? '♡' : '♥';
+        btn.classList.toggle('liked', !wasLiked);
+        btn.disabled = true;
+
+        try {
+            const resp = await fetch(`/api/items/${itemId}/like`, {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': getAntiForgeryToken() }
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                countEl.textContent = data.likeCount ?? countEl.textContent;
+                const serverLiked = !!data.liked;
+                btn.dataset.liked = serverLiked ? 'true' : 'false';
+                heartEl.textContent = serverLiked ? '♥' : '♡';
+                btn.classList.toggle('liked', serverLiked);
+            } else {
+                // Roll back optimistic update
+                rollbackLike(btn, wasLiked, prevCount);
+            }
+        } catch {
+            rollbackLike(btn, wasLiked, prevCount);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function rollbackLike(btn, wasLiked, prevCount) {
+        btn.dataset.liked = wasLiked ? 'true' : 'false';
+        btn.querySelector('.like-count').textContent = prevCount;
+        btn.querySelector('.heart-icon').textContent = wasLiked ? '♥' : '♡';
+        btn.classList.toggle('liked', wasLiked);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Flash messages                                                        */
+    /* ------------------------------------------------------------------ */
+    function showFlash(msg, type = 'success') {
+        const container = document.getElementById('flashContainer');
+        if (!container) return;
+
+        const el = document.createElement('div');
+        el.className = `flash-alert ${type}`;
+        el.setAttribute('role', 'alert');
+        el.innerHTML = `
+            <span>${escapeHtml(msg)}</span>
+            <button class="flash-close" aria-label="Dismiss">×</button>
+        `;
+        el.querySelector('.flash-close').addEventListener('click', () => el.remove());
+        container.appendChild(el);
+
+        if (type === 'success') {
+            setTimeout(() => el.classList.add('fade') || el.remove(), 5000);
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Helpers                                                               */
+    /* ------------------------------------------------------------------ */
+    function getAntiForgeryToken() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    }
+
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    /* Restore any flash message that was stored before page reload */
+    const _pendingFlash = sessionStorage.getItem('_flashMsg');
+    if (_pendingFlash) {
+        sessionStorage.removeItem('_flashMsg');
+        document.addEventListener('DOMContentLoaded', () => showFlash(_pendingFlash, 'success'));
+    }
+})();
+</script>

@@ -23,12 +23,13 @@ public class ItemService : IItemService
             .FirstOrDefaultAsync(i => i.Id == id);
     }
 
-    public async Task<List<Item>> GetInventoryItemsAsync(int inventoryId, int page = 1, int pageSize = 20)
+    public async Task<List<Item>> GetInventoryItemsAsync(int inventoryId, int page = 1, int pageSize = 5)
     {
         return await _context.Items
             .AsNoTracking()
             .Where(i => i.InventoryId == inventoryId)
             .Include(i => i.CreatedBy)
+            .Include(i => i.Likes)
             .OrderByDescending(i => i.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -99,6 +100,10 @@ public class ItemService : IItemService
 
     public async Task<string> GenerateUniqueCustomIdAsync(int inventoryId, List<CustomIdElement> format)
     {
+        // If format is empty or null, return null or empty - let the controller handle default ID
+        if (format == null || format.Count == 0)
+            return string.Empty;
+
         string customId;
         int attempts = 0;
         const int maxAttempts = 10;

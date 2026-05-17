@@ -1,33 +1,38 @@
 @model Inventory
 @{
-    ViewData["Title"] = Model.Title;
+    ViewData["Title"] = Model.Title; // [cite: 66]
 }
 
 <div class="container-main">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h1>@Model.Title</h1>
+            <h1>@Model.Title</h1> @* [cite: 66] *@
             <p class="text-muted">
-                Created by @Model.Owner?.UserName on @Model.CreatedAt.ToString("MMM dd, yyyy")
+                Created by @Model.Owner?.UserName on @Model.CreatedAt.ToString("MMM dd, yyyy") @* [cite: 66] *@
             </p>
         </div>
-        @if (ViewBag.CanEdit)
-        {
-            <div class="col-md-4 text-end">
-                <a href="/Dashboard/Index" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Home</a>                
+
+        <div class="col-md-4 text-end">
+            @* [cite: 67] *@
+            <a href="/Home/Index" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Home</a>  @* [cite: 67] *@
+            @if (ViewBag.CanEdit) // [cite: 67]
+            {
                 <a href="/Inventories/Edit/@Model.Id" class="btn btn-primary">Edit</a>
+                // [cite: 67]
                 <a href="/Inventories/Settings/@Model.Id" class="btn btn-warning">Settings</a>
-            </div>
-        }
+                // [cite: 67, 68]
+            }
+        </div>
     </div>
 
     <div class="row">
         <div class="col-md-8 mb-4">
-            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            @if (!string.IsNullOrEmpty(Model.ImageUrl)) // [cite: 68]
             {
                 <div class="row mb-4">
                     <div class="col-md-12">
-                        <img src="@Model.ImageUrl" class="img-fluid rounded" style="max-height: 300px; object-fit: cover;">
+                        @* [cite: 69] *@
+                        <img src="@Model.ImageUrl" class="img-fluid rounded" style="max-height: 300px; object-fit: cover;"> @* [cite: 69, 70] *@
                     </div>
                 </div>
             }
@@ -36,31 +41,34 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Information</h5>
+                    <h5 class="card-title">Information</h5> @* [cite: 71] *@
                     <dl class="row">
                         <dt class="col-sm-4">Category:</dt>
-                        <dd class="col-sm-8"><span class="badge bg-secondary">@Model.Category</span></dd>
+                        <dd class="col-sm-8"><span class="badge bg-secondary">@Model.Category</span></dd> @* [cite: 71] *@
 
-                        <dt class="col-sm-4">Visibility:</dt>
+                        <dt class="col-sm-4">Visibility:</dt> @* [cite: 72] *@
                         <dd class="col-sm-8">
-                            @if (Model.Visibility == Inventory_Management_System.Models.VisibilityType.Public)
+                            @if (Model.Visibility == Inventory_Management_System.Models.VisibilityType.Public) // [cite: 72]
                             {
                                 <span class="badge bg-success">Public</span>
+                                // [cite: 73]
                             }
                             else
                             {
                                 <span class="badge bg-warning">Private</span>
+                                // [cite: 74]
                             }
-                        </dd>
+                        </dd> @* [cite: 75] *@
 
                         <dt class="col-sm-4">Tags:</dt>
                         <dd class="col-sm-8">
-                            @foreach (var tag in Model.Tags)
+                            @foreach (var tag in Model.Tags) // [cite: 75]
                             {
                                 <span class="badge bg-info">@tag.Tag</span>
+                                // [cite: 76]
                             }
                         </dd>
-                    </dl>
+                    </dl> @* [cite: 77] *@
                 </div>
             </div>
         </div>
@@ -70,35 +78,31 @@
         <div class="">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Description</h5>
-                    <p class="card-text">@Html.Raw(MarkdownHelper.ToHtml(Model.Description))</p>
+                    @* [cite: 78] *@
+                    <h5 class="card-title">Description</h5> @* [cite: 78] *@
+                    <p class="card-text">@Html.Raw(MarkdownHelper.ToHtml(Model.Description))</p> @* [cite: 78] *@
                 </div>
             </div>
 
             <ul class="nav nav-tabs" id="inventoryTabs" role="tablist">
                 <li class="nav-item" role="presentation">
+                    @* [cite: 79] *@
                     <button class="nav-link active" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab">
                         Items
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                    @* [cite: 80] *@
                     <button class="nav-link" id="discussion-tab" data-bs-toggle="tab" data-bs-target="#discussion" type="button" role="tab">
                         Discussion
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                    @* [cite: 81] *@
                     <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics" type="button" role="tab">
                         Statistics
                     </button>
-                </li>
-                @if (ViewBag.CanEdit)
-                {
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
-                            Settings
-                        </button>
-                    </li>
-                }
+                </li> @* [cite: 82] *@
             </ul>
 
             <div class="tab-content">
@@ -106,70 +110,121 @@
                     <div class="card">
                         <div class="card-body">
                             <div id="itemsContainer">
+                                @* [cite: 83] *@
                                 Loading...
                             </div>
-                        </div>
+                        </div> @* [cite: 84] *@
                     </div>
                 </div>
                 <div class="tab-pane fade" id="discussion" role="tabpanel">
                     <div class="card">
                         <div class="card-body">
+                            @* [cite: 85] *@
                             <div id="discussionContainer">
                                 Loading...
-                            </div>
+                            </div> @* [cite: 86] *@
                         </div>
                     </div>
                 </div>
                 <div class="tab-pane fade" id="statistics" role="tabpanel">
                     <div class="card">
+                        @* [cite: 87] *@
                         <div class="card-body">
                             <div id="statisticsContainer">
                                 Loading...
-                            </div>
+                            </div> @* [cite: 88] *@
                         </div>
                     </div>
                 </div>
-                @if (ViewBag.CanEdit)
-                {
-                    <div class="tab-pane fade" id="settings" role="tabpanel">
-                        <div class="card">
-                            <div class="card-body">
-                                <div id="settingsContainer">
-                                    Loading...
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
             </div>
         </div>
-    </div>
+    </div> @* [cite: 89] *@
 </div>
 
 @section Scripts {
     <script>
-        const inventoryId = @Model.Id;
-        const canEdit = @(ViewBag.CanEdit ? "true" : "false");
+        const inventoryId = '@Model.Id';
+        const canEdit = '@(ViewBag.CanEdit ? "true" : "false")';
         const userId = '@ViewBag.UserId';
 
-        // Load items tab
-        document.getElementById('items-tab').addEventListener('shown.bs.tab', function () {
+        // Ensure DOM is fully evaluated before wiring up listeners to prevent layout drop bugs
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('items-tab').addEventListener('shown.bs.tab', function () {
+                loadItems();
+                clearDiscussionPolling();
+            });
+
+            document.getElementById('discussion-tab').addEventListener('shown.bs.tab', function () {
+                loadDiscussion(1);
+            });
+
+            document.getElementById('statistics-tab').addEventListener('shown.bs.tab', function () {
+                loadStatistics();
+                clearDiscussionPolling();
+            });
+
+            // Initial view load run
             loadItems();
+
+            // ── Event delegation on #discussionContainer ──────────────
+            // Handles pagination, post form, and delete form — all without
+            // ever leaving the Details page / Discussion tab.
+            document.getElementById('discussionContainer').addEventListener('click', async function (e) {
+
+                // ── Pagination button ──────────────────────────────────
+                const pageBtn = e.target.closest('.disc-page-btn');
+                if (pageBtn) {
+                    e.preventDefault();
+                    await loadDiscussion(parseInt(pageBtn.dataset.page, 10));
+                    return;
+                }
+
+                // ── Delete form submit button ──────────────────────────
+                const deleteBtn = e.target.closest('[data-disc-delete] button[type="submit"]');
+                if (deleteBtn) {
+                    e.preventDefault();
+                    if (!confirm('Delete this comment?')) return;
+
+                    const form    = deleteBtn.closest('form[data-disc-delete]');
+                    const data    = new FormData(form);
+                    const page    = parseInt(data.get('returnPage'), 10) || 1;
+
+                    await fetch(form.action, { method: 'POST', body: data });
+                    await loadDiscussion(page);
+                    return;
+                }
+            });
+
+            // ── Post form submit (separate listener for submit event) ──
+            document.getElementById('discussionContainer').addEventListener('submit', async function (e) {
+                const postForm = e.target.closest('form[data-disc-post]');
+                if (!postForm) return;
+
+                e.preventDefault();
+
+                // HTML5 validation
+                if (!postForm.checkValidity()) {
+                    postForm.classList.add('was-validated');
+                    return;
+                }
+
+                const data = new FormData(postForm);
+                await fetch(postForm.action, { method: 'POST', body: data });
+
+                // After posting, jump to page 1 (newest first)
+                await loadDiscussion(1);
+            });
         });
 
-        // Load discussion tab
-        document.getElementById('discussion-tab').addEventListener('shown.bs.tab', function () {
-            loadDiscussion();
-        });
-
-        // Load statistics tab
-        document.getElementById('statistics-tab').addEventListener('shown.bs.tab', function () {
-            loadStatistics();
-        });
+        function clearDiscussionPolling() {
+            if (window.discussionPollInterval) {
+                clearInterval(window.discussionPollInterval);
+            }
+        }
 
         async function loadItems() {
             try {
-                const response = await fetch(`/Inventories/Items/${inventoryId}`);
+                const response = await fetch(`/Inventories/ItemsPartial/${inventoryId}`);
                 document.getElementById('itemsContainer').innerHTML = await response.text();
             } catch (error) {
                 console.error('Error loading items:', error);
@@ -177,9 +232,9 @@
             }
         }
 
-        async function loadDiscussion() {
+        async function loadDiscussion(page = 1) {
             try {
-                const response = await fetch(`/Inventories/Discussion/${inventoryId}`);
+                const response = await fetch(`/Inventories/DiscussionPartial/${inventoryId}?page=${page}`);
                 document.getElementById('discussionContainer').innerHTML = await response.text();
             } catch (error) {
                 console.error('Error loading discussion:', error);
@@ -189,15 +244,12 @@
 
         async function loadStatistics() {
             try {
-                const response = await fetch(`/Inventories/Statistics/${inventoryId}`);
+                const response = await fetch(`/Inventories/StatisticsPartial/${inventoryId}`);
                 document.getElementById('statisticsContainer').innerHTML = await response.text();
             } catch (error) {
                 console.error('Error loading statistics:', error);
                 document.getElementById('statisticsContainer').innerHTML = '<p class="text-danger">Error loading statistics</p>';
             }
         }
-
-        // Load items tab by default
-        loadItems();
     </script>
 }

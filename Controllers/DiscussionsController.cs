@@ -7,7 +7,6 @@ using Inventory_Management_System.Models.DTOs;
 using Inventory_Management_System.Services.Interfaces;
 namespace Inventory_Management_System.Controllers;
 
-[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class DiscussionsController : ControllerBase

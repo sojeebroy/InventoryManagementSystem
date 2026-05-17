@@ -73,7 +73,7 @@ public class HomeController : Controller
                 {
                     TagName = g.Key,
                     Frequency = g.Count(),
-                    Size = CalculateTagSize(g.Count()) // Small, Medium, Large, ExtraLarge
+                    Size = CalculateTagSize(g.Count()) 
                 })
                 .OrderByDescending(t => t.Frequency)
                 .Take(50)
@@ -89,9 +89,7 @@ public class HomeController : Controller
         }
     }
 
-    /// <summary>
-    /// Global full-text search (optimized with indexes)
-    /// </summary>
+    
     [HttpGet]
     public async Task<IActionResult> Search(string query, int page = 1)
     {

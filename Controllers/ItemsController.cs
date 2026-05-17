@@ -54,14 +54,24 @@ public class ItemsController : ControllerBase
         if (inventory == null)
             return NotFound("Inventory not found");
 
-        // Generate custom ID
+        // Generate custom ID only if format is configured
+        string? customId = null;
         List<CustomIdElement> format = new();
+
         if (!string.IsNullOrEmpty(inventory.CustomIdFormat))
         {
             format = JsonSerializer.Deserialize<List<CustomIdElement>>(inventory.CustomIdFormat) ?? new();
+            if (format.Count > 0)
+            {
+                customId = await _itemService.GenerateUniqueCustomIdAsync(dto.InventoryId, format);
+            }
         }
 
-        var customId = await _itemService.GenerateUniqueCustomIdAsync(dto.InventoryId, format);
+        // If no format is configured, use a temporary format (GUID-based)
+        if (string.IsNullOrEmpty(customId))
+        {
+            customId = $"ITEM-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+        }
 
         var item = new Item
         {
@@ -104,7 +114,28 @@ public class ItemsController : ControllerBase
         if (!canAccess)
             return Forbid();
 
-        return Ok(item);
+        var dto = new UpdateItemDto
+        {
+            Id = item.Id,
+            CustomString1Value = item.CustomString1Value,
+            CustomString2Value = item.CustomString2Value,
+            CustomString3Value = item.CustomString3Value,
+            CustomText1Value = item.CustomText1Value,
+            CustomText2Value = item.CustomText2Value,
+            CustomText3Value = item.CustomText3Value,
+            CustomNumber1Value = item.CustomNumber1Value,
+            CustomNumber2Value = item.CustomNumber2Value,
+            CustomNumber3Value = item.CustomNumber3Value,
+            CustomBool1Value = item.CustomBool1Value,
+            CustomBool2Value = item.CustomBool2Value,
+            CustomBool3Value = item.CustomBool3Value,
+            CustomLink1Value = item.CustomLink1Value,
+            CustomLink2Value = item.CustomLink2Value,
+            CustomLink3Value = item.CustomLink3Value,
+            Version = item.Version
+        };
+
+        return Ok(dto);
     }
 
     [HttpPut("{id}")]
@@ -219,9 +250,9 @@ public class ItemsController : ControllerBase
             .Count();
 
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var isLiked = !string.IsNullOrEmpty(userId) && _context.ItemLikes
+        var userLiked = !string.IsNullOrEmpty(userId) && _context.ItemLikes
             .Any(il => il.ItemId == itemId && il.UserId == userId);
 
-        return Ok(new { count = likeCount, isLiked });
+        return Ok(new { count = likeCount, isLiked = userLiked, userLiked = userLiked });
     }
 }

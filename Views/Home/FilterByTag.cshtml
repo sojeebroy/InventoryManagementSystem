@@ -31,7 +31,7 @@
                 <div class="row">
                     @foreach (var inventory in Model.Results)
                     {
-                        <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="col-md-6 col-lg-4 mb-4" style="cursor: pointer;" onclick="window.location.href='@Url.Action("Details", "Inventories", new { id = inventory.Id })'">
                             <div class="card h-100 shadow-sm hover-card">
                                 @if (!string.IsNullOrEmpty(inventory.ImageUrl))
                                 {

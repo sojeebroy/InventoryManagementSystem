@@ -58,23 +58,16 @@
                 </div>
 
                 <div class="mb-3">
-                    <img id="imagePreview" src="" alt="Image preview" style="display: none; max-width: 300px; max-height: 300px; border-radius: 4px; margin-top: 10px;" />
-                </div>
-
-                @if (!string.IsNullOrEmpty(Model.ImageUrl))
-                {
-                    <div class="mb-3">
-                        <label>Current Image:</label>
-                        <div>
-                            <img src="@Model.ImageUrl" class="img-fluid" style="max-height: 200px; border-radius: 4px;" />
-                        </div>
+                    <label>Image Preview:</label>
+                    <div>
+                        <img id="imagePreview" src="@Model.ImageUrl" alt="Image preview" 
+                             style="@(string.IsNullOrEmpty(Model.ImageUrl) ? "display: none;" : "") max-width: 300px; max-height: 300px; border-radius: 4px; margin-top: 10px;" />
                     </div>
-                }
+                </div>
 
                 <div class="mb-3">
                     <label asp-for="ImageUrl" class="form-label"></label>
-                    <input asp-for="ImageUrl" type="url" class="form-control" placeholder="Or provide an image URL (cloud storage)">
-                    <small class="text-muted">Only used if no file is uploaded</small>
+                    <input asp-for="ImageUrl" type="url" class="form-control" placeholder="image URL (cloud storage)" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
                     <span asp-validation-for="ImageUrl" class="invalid-feedback"></span>
                 </div>
 
@@ -98,6 +91,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const fileInput = document.querySelector('input[type="file"]');
         const imagePreview = document.getElementById('imagePreview');
+        const initialImageUrl = imagePreview.src;
 
         fileInput.addEventListener('change', function (e) {
             const file = e.target.files[0];
@@ -109,7 +103,9 @@
                 };
                 reader.readAsDataURL(file);
             } else {
-                imagePreview.style.display = 'none';
+                // Reset to original database image
+                imagePreview.src = initialImageUrl;
+                imagePreview.style.display = initialImageUrl ? 'block' : 'none';
             }
         });
     });

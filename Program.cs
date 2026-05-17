@@ -1,10 +1,15 @@
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using dotenv.net;
+using Inventory_Management_System.Data;
+using Inventory_Management_System.Middleware;
+using Inventory_Management_System.Models;
+using Inventory_Management_System.Services;
+using Inventory_Management_System.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Inventory_Management_System.Data;
-using Inventory_Management_System.Models;
-using Inventory_Management_System.Middleware;
-using Inventory_Management_System.Services.Interfaces;
-using Inventory_Management_System.Services;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,6 +62,10 @@ builder.Services.AddAuthentication()
         };
     });
 
+DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
+Cloudinary cloudinary = new Cloudinary(Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
+cloudinary.Api.Secure = true;
+
 // Add services
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IItemService, ItemService>();
@@ -64,7 +73,20 @@ builder.Services.AddScoped<IInventoryAuthorizationService, InventoryAuthorizatio
 builder.Services.AddScoped<ICustomIdService, CustomIdService>();
 builder.Services.AddScoped<IDiscussionService, DiscussionService>();
 builder.Services.AddScoped<IStatisticsService, StatisticsService>();
-builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();  
+builder.Services.AddScoped<ICloudinaryService>(provider =>
+{
+    try
+    {
+        return new CloudinaryService();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Failed to initialize CloudinaryService: {ex}");
+        throw;
+    }
+});
+
+
 
 // Add controllers and views
 builder.Services.AddControllersWithViews();
@@ -94,7 +116,7 @@ app.MapControllerRoute(
 
 app.MapRazorPages();
 
-// Initialize database
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;

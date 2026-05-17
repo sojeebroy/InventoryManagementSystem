@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Models.DTOs;
-using Inventory_Management_System.Services.Interfaces;  // ← ICloudinaryService lives here now
+using Inventory_Management_System.Services.Interfaces;
 using Inventory_Management_System.Services;
 using System.Text.Json;
 
@@ -288,20 +288,21 @@ public class InventoriesController : Controller
             return Forbid();
         }
 
-        var items = await _itemService.GetInventoryItemsAsync(id, page);
+        var items = await _itemService.GetInventoryItemsAsync(id, page, pageSize: 5);
         var totalItems = await _itemService.GetInventoryItemsCountAsync(id);
 
         ViewBag.Inventory = inventory;
         ViewBag.CanEdit = !string.IsNullOrEmpty(userId) &&
             await _authService.CanEditInventoryAsync(id, userId);
         ViewBag.UserId = userId;
-        ViewBag.TotalPages = (int)Math.Ceiling(totalItems / 20.0);
+        ViewBag.TotalPages = (int)Math.Ceiling(totalItems / 5.0);
         ViewBag.CurrentPage = page;
+        ViewBag.TotalItems = totalItems;
 
-        return View(items);
+        return View("Items", items);
     }
 
-    public async Task<IActionResult> Discussion(int id)
+    public async Task<IActionResult> ItemsPartial(int id, int page = 1)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         var inventory = await _inventoryService.GetInventoryByIdAsync(id);
@@ -317,12 +318,191 @@ public class InventoriesController : Controller
             return Forbid();
         }
 
-        var discussions = await _discussionService.GetInventoryDiscussionsAsync(id);
-        ViewBag.Inventory = inventory;
-        ViewBag.CanAdd = !string.IsNullOrEmpty(userId);
-        ViewBag.UserId = userId;
+        var items = await _itemService.GetInventoryItemsAsync(id, page, pageSize: 5);
+        var totalItems = await _itemService.GetInventoryItemsCountAsync(id);
 
-        return View(discussions);
+        ViewBag.Inventory = inventory;
+        ViewBag.CanEdit = !string.IsNullOrEmpty(userId) &&
+            await _authService.CanEditInventoryAsync(id, userId);
+        ViewBag.UserId = userId;
+        ViewBag.TotalPages = (int)Math.Ceiling(totalItems / 5.0);
+        ViewBag.CurrentPage = page;
+        ViewBag.TotalItems = totalItems;
+
+        return PartialView("_Items", items);
+    }
+
+    [AllowAnonymous]
+    public async Task<IActionResult> Discussion(int id, int page = 1)
+    {
+        var currentUser = await _userManager.GetUserAsync(User);
+        var userId = currentUser?.Id;
+        var isAdmin = User.IsInRole("Admin");
+        var inventory = await _inventoryService.GetInventoryByIdAsync(id);
+
+        if (inventory == null)
+            return NotFound();
+
+        // Private inventories: only owner, admin, or explicitly shared users may view
+        bool isOwner = inventory.OwnerId == userId;
+        bool hasAccess = inventory.AccessControls?.Any(ac => ac.UserId == userId) == true;
+        bool isPublic = inventory.Visibility == VisibilityType.Public;
+
+        if (!isPublic && !isOwner && !isAdmin && !hasAccess)
+            return Forbid();
+
+        // Any authenticated user may post
+        bool canAdd = currentUser != null;
+
+        // Pagination — clamp page to valid range
+        const int pageSize = 5;
+        page = Math.Max(1, page);
+        var totalDiscussions = await _discussionService.GetInventoryDiscussionsCountAsync(id);
+        var totalPages = (int)Math.Ceiling(totalDiscussions / (double)pageSize);
+        totalPages = Math.Max(1, totalPages);
+        page = Math.Min(page, totalPages);
+
+        var discussions = await _discussionService.GetInventoryDiscussionsAsync(id, page, pageSize);
+
+        ViewBag.Inventory = inventory;
+        ViewBag.CanAdd = canAdd;
+        ViewBag.UserId = userId ?? "";
+        ViewBag.IsAdmin = isAdmin;
+        ViewBag.IsOwner = isOwner;
+        ViewBag.TotalPages = totalPages;
+        ViewBag.CurrentPage = page;
+        ViewBag.TotalDiscussions = totalDiscussions;
+
+        return View("Discussion", discussions);
+    }
+
+    [AllowAnonymous]
+    public async Task<IActionResult> DiscussionPartial(int id, int page = 1)
+    {
+        var currentUser = await _userManager.GetUserAsync(User);
+        var userId = currentUser?.Id;
+        var isAdmin = User.IsInRole("Admin");
+        var inventory = await _inventoryService.GetInventoryByIdAsync(id);
+
+        if (inventory == null)
+            return NotFound();
+
+        bool isOwner = inventory.OwnerId == userId;
+        bool hasAccess = inventory.AccessControls?.Any(ac => ac.UserId == userId) == true;
+        bool isPublic = inventory.Visibility == VisibilityType.Public;
+
+        if (!isPublic && !isOwner && !isAdmin && !hasAccess)
+            return Forbid();
+
+        // Any authenticated user may post
+        bool canAdd = currentUser != null;
+
+        const int pageSize = 5;
+        page = Math.Max(1, page);
+        var totalDiscussions = await _discussionService.GetInventoryDiscussionsCountAsync(id);
+        var totalPages = Math.Max(1, (int)Math.Ceiling(totalDiscussions / (double)pageSize));
+        page = Math.Min(page, totalPages);
+
+        var discussions = await _discussionService.GetInventoryDiscussionsAsync(id, page, pageSize);
+
+        ViewBag.Inventory = inventory;
+        ViewBag.CanAdd = canAdd;
+        ViewBag.UserId = userId ?? "";
+        ViewBag.IsAdmin = isAdmin;
+        ViewBag.IsOwner = isOwner;
+        ViewBag.TotalPages = totalPages;
+        ViewBag.CurrentPage = page;
+        ViewBag.TotalDiscussions = totalDiscussions;
+
+        return PartialView("_Discussion", discussions);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PostDiscussion(int inventoryId, string content)
+    {
+        var currentUser = await _userManager.GetUserAsync(User);
+        var userId = currentUser?.Id;
+
+        if (currentUser == null)
+        {
+            TempData["DiscussionError"] = "You must be logged in to post.";
+            return RedirectToAction("Discussion", new { id = inventoryId });
+        }
+
+        var inventory = await _inventoryService.GetInventoryByIdAsync(inventoryId);
+        if (inventory == null)
+            return NotFound();
+
+        // Any authenticated user may post — no extra access check needed
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            TempData["DiscussionError"] = "Comment cannot be empty.";
+            return RedirectToAction("Discussion", new { id = inventoryId });
+        }
+
+        if (content.Trim().Length > 5000)
+        {
+            TempData["DiscussionError"] = "Comment must be 5000 characters or fewer.";
+            return RedirectToAction("Discussion", new { id = inventoryId });
+        }
+
+        var discussion = new Discussion
+        {
+            InventoryId = inventoryId,
+            UserId = userId,
+            Content = content.Trim(),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _discussionService.AddDiscussionAsync(discussion);
+        TempData["DiscussionSuccess"] = "Your comment was posted successfully!";
+
+        // Redirect to page 1 — discussions are ordered descending so newest appears first
+        return RedirectToAction("Discussion", new { id = inventoryId, page = 1 });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteDiscussion(int id, int inventoryId, int returnPage = 1)
+    {
+        var currentUser = await _userManager.GetUserAsync(User);
+        var userId = currentUser?.Id;
+        var isAdmin = User.IsInRole("Admin");
+
+        if (currentUser == null)
+            return RedirectToAction("Login", "Account");
+
+        var inventory = await _inventoryService.GetInventoryByIdAsync(inventoryId);
+        if (inventory == null)
+            return NotFound();
+
+        // Fetch the specific discussion from DB
+        var allOnPage = await _discussionService.GetInventoryDiscussionsAsync(inventoryId, 1, int.MaxValue);
+        var discussion = allOnPage.FirstOrDefault(d => d.Id == id);
+
+        if (discussion == null)
+            return NotFound();
+
+        // Only the post author or admin may delete
+        if (discussion.UserId != userId && !isAdmin)
+        {
+            TempData["DiscussionError"] = "You don't have permission to delete this post.";
+            return RedirectToAction("Discussion", new { id = inventoryId, page = returnPage });
+        }
+
+        await _discussionService.DeleteDiscussionAsync(id);
+        TempData["DiscussionSuccess"] = "Comment deleted.";
+
+        // Recalculate page count after deletion so we never land on a ghost page
+        const int pageSize = 5;
+        var total = await _discussionService.GetInventoryDiscussionsCountAsync(inventoryId);
+        var maxPage = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+        var safePage = Math.Min(returnPage, maxPage);
+
+        return RedirectToAction("Discussion", new { id = inventoryId, page = safePage });
     }
 
     public async Task<IActionResult> Settings(int id)
@@ -335,7 +515,7 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
-        return View(inventory);
+        return View("Settings", inventory);
     }
 
     public async Task<IActionResult> Statistics(int id)
@@ -355,8 +535,36 @@ public class InventoriesController : Controller
         }
 
         var stats = await _statisticsService.GetInventoryStatisticsAsync(id);
-        ViewBag.Inventory = inventory;
+        var discussions = await _discussionService.GetInventoryDiscussionsAsync(id);
 
-        return View(stats);
+        ViewBag.Inventory = inventory;
+        ViewBag.TotalDiscussions = discussions.Count;
+
+        return View("Statistics", stats);
+    }
+
+    public async Task<IActionResult> StatisticsPartial(int id)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var inventory = await _inventoryService.GetInventoryByIdAsync(id);
+
+        if (inventory == null)
+            return NotFound();
+
+        if (inventory.Visibility == VisibilityType.Private &&
+            (string.IsNullOrEmpty(userId) ||
+             (inventory.OwnerId != userId &&
+              !inventory.AccessControls.Any(ac => ac.UserId == userId))))
+        {
+            return Forbid();
+        }
+
+        var stats = await _statisticsService.GetInventoryStatisticsAsync(id);
+        var discussions = await _discussionService.GetInventoryDiscussionsAsync(id);
+
+        ViewBag.Inventory = inventory;
+        ViewBag.TotalDiscussions = discussions.Count;
+
+        return PartialView("_Statistics", stats);
     }
 }

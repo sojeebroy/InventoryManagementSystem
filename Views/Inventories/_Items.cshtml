@@ -1,0 +1,112 @@
+@using Inventory_Management_System.Models
+@model List<Item>
+@{
+    ViewData["Title"] = "_Items";
+    var inventory = (Inventory)ViewBag.Inventory;
+    var totalPages = (int)ViewBag.TotalPages;
+    var currentPage = (int)ViewBag.CurrentPage;
+    var totalItems = (int)ViewBag.TotalItems;
+}
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/items.css" />
+
+
+<div class="container-main">
+    <div id="flashContainer"></div>
+    
+    <div class="items-header">
+        <div>
+            <h1>@inventory.Title — Items</h1>
+            <span class="items-meta">@totalItems item@(totalItems != 1 ? "s" : "") total &nbsp;·&nbsp; Page @currentPage of @(totalPages < 1 ? 1 : totalPages)</span>
+        </div>
+        <div class="items-actions">
+            <a href="/Inventories/Items/@inventory.Id" class="btn btn-success">Manage Items</a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">📦</div>
+            <p>No items in this inventory yet.</p>
+            <a href="/Inventories/Items/@inventory.Id" class="btn btn-primary btn-sm">+ Add First Item</a>
+        </div>
+    }
+    else
+    {
+    
+        <div class="items-table-wrap">
+            <table class="items-table" id="itemsTable">
+                <thead>
+                    <tr>
+                        <th>Custom ID</th>
+                        <th>Created By</th>
+                        <th>Created</th>
+                        <th>Likes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr class="item-row">
+                            <td><span class="custom-id-badge">@item.CustomId</span></td>
+                            <td>@(item.CreatedBy?.UserName ?? "—")</td>
+                            <td class="date-cell" title="@item.CreatedAt.ToString("yyyy-MM-dd HH:mm")">
+                                @item.CreatedAt.ToString("MMM dd, yyyy")
+                            </td>
+                            <td>
+                                <button disabled class="like-btn"
+                                        data-item-id="@item.Id"
+                                        data-liked="false"
+                                        aria-label="Liked item">
+                                    <span class="heart-icon">❤️</span>
+                                    <span class="like-count">@(item.Likes?.Count ?? 0)</span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <!-- Pagination — always visible -->
+            <div class="pagination-wrap">
+                <span class="pagination-info">
+                    Showing @((currentPage - 1) * 5 + 1)–@(Math.Min(currentPage * 5, totalItems)) of @totalItems item@(totalItems != 1 ? "s" : "")
+                </span>
+                <div class="pagination-controls">
+                    @{
+                        var safeTotal = Math.Max(totalPages, 1);
+                    }
+                    <a class="page-btn @(currentPage <= 1 ? "disabled" : "")"
+                       href="/Inventories/Items/@inventory.Id?page=1"
+                       aria-label="First page">«</a>
+                    <a class="page-btn @(currentPage <= 1 ? "disabled" : "")"
+                       href="/Inventories/Items/@inventory.Id?page=@(currentPage - 1)"
+                       aria-label="Previous page">‹</a>
+
+                    @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(safeTotal, currentPage + 2); i++)
+                    {
+                        if (i == currentPage)
+                        {
+                            <span class="page-btn active">@i</span>
+                        }
+                        else
+                        {
+                            <a class="page-btn" href="/Inventories/Items/@inventory.Id?page=@i">@i</a>
+                        }
+                    }
+
+                    <a class="page-btn @(currentPage >= safeTotal ? "disabled" : "")"
+                       href="/Inventories/Items/@inventory.Id?page=@(currentPage + 1)"
+                       aria-label="Next page">›</a>
+                    <a class="page-btn @(currentPage >= safeTotal ? "disabled" : "")"
+                       href="/Inventories/Items/@inventory.Id?page=@safeTotal"
+                       aria-label="Last page">»</a>
+                </div>
+            </div>
+        </div>
+    }
+    
+</div>

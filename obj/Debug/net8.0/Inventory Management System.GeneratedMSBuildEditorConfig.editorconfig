@@ -8,6 +8,7 @@ build_property.ProjectTypeGuids =
 build_property.InvariantGlobalization = 
 build_property.PlatformNeutralAssembly = 
 build_property.EnforceExtendedAnalyzerRules = 
+build_property.EntryPointFilePath = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = Inventory_Management_System
 build_property.RootNamespace = Inventory_Management_System
@@ -88,6 +89,22 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/Itransition/Inventory Management System/Inventory Management System/Views/Inventories/Statistics.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3JpZXNcU3RhdGlzdGljcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Itransition/Inventory Management System/Inventory Management System/Views/Inventories/_Discussion.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3JpZXNcX0Rpc2N1c3Npb24uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Itransition/Inventory Management System/Inventory Management System/Views/Inventories/_Items.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3JpZXNcX0l0ZW1zLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Itransition/Inventory Management System/Inventory Management System/Views/Inventories/_Settings.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3JpZXNcX1NldHRpbmdzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Itransition/Inventory Management System/Inventory Management System/Views/Inventories/_Statistics.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3JpZXNcX1N0YXRpc3RpY3MuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Itransition/Inventory Management System/Inventory Management System/Views/Shared/Error.cshtml]

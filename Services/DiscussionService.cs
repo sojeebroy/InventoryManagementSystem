@@ -12,14 +12,23 @@ public class DiscussionService : IDiscussionService
         _context = context;
     }
 
-    public async Task<List<Discussion>> GetInventoryDiscussionsAsync(int inventoryId)
+    public async Task<List<Discussion>> GetInventoryDiscussionsAsync(int inventoryId, int page = 1, int pageSize = 5)
     {
         return await _context.Discussions
             .AsNoTracking()
             .Where(d => d.InventoryId == inventoryId)
             .Include(d => d.User)
-            .OrderBy(d => d.CreatedAt)
+            .OrderByDescending(d => d.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+    }
+
+    public async Task<int> GetInventoryDiscussionsCountAsync(int inventoryId)
+    {
+        return await _context.Discussions
+            .Where(d => d.InventoryId == inventoryId)
+            .CountAsync();
     }
 
     public async Task<Discussion> AddDiscussionAsync(Discussion discussion)

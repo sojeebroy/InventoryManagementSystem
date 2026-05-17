@@ -1,4 +1,3 @@
-using System;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using dotenv.net;
@@ -10,22 +9,33 @@ public class CloudinaryService : ICloudinaryService
     private readonly Cloudinary _cloudinary;
 
     public CloudinaryService()
-    {
-
+    { 
         try
         {
-            DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
+            DotEnv.Load(options: new DotEnvOptions(probeForEnv: true, envFilePaths: new[] { ".env" }));
         }
         catch (System.Exception ex)
         {
-
+            Console.WriteLine($"[ERROR] Failed to load .env file: {ex.Message}");
             throw new InvalidOperationException("Failed to load .env file.", ex);
         }
 
-
         var CloudinaryUrl = Environment.GetEnvironmentVariable("CLOUDINARY_URL");
+        
+        if (string.IsNullOrEmpty(CloudinaryUrl))
+        {
+            throw new InvalidOperationException("CLOUDINARY_URL environment variable is not set.");
+        }
 
-        this._cloudinary = new Cloudinary(CloudinaryUrl) { Api = { Secure = true } };
+        try
+        {
+            this._cloudinary = new Cloudinary(CloudinaryUrl) { Api = { Secure = true } };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Failed to initialize Cloudinary: {ex.Message}");
+            throw;
+        }
     }
 
     public async Task<string?> UploadImageAsync(IFormFile image)
@@ -36,7 +46,6 @@ public class CloudinaryService : ICloudinaryService
         }
 
         using var stream = image.OpenReadStream();
-
 
         var uploadParams = new ImageUploadParams
         {

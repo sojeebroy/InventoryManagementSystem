@@ -470,3 +470,4 @@ D:\Itransition\Inventory Management System\Inventory Management System\obj\Debug
 D:\Itransition\Inventory Management System\Inventory Management System\obj\Debug\net8.0\Inventory Management System.pdb
 D:\Itransition\Inventory Management System\Inventory Management System\obj\Debug\net8.0\Inventory Management System.genruntimeconfig.cache
 D:\Itransition\Inventory Management System\Inventory Management System\obj\Debug\net8.0\ref\Inventory Management System.dll
+D:\Itransition\Inventory Management System\Inventory Management System\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
