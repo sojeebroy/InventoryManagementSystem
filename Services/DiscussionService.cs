@@ -24,6 +24,16 @@ public class DiscussionService : IDiscussionService
             .ToListAsync();
     }
 
+    public async Task<List<Discussion>> GetInventoryDiscussionsSinceAsync(int inventoryId, DateTime since)
+    {
+        return await _context.Discussions
+            .AsNoTracking()
+            .Where(d => d.InventoryId == inventoryId && d.CreatedAt > since)
+            .Include(d => d.User)
+            .OrderBy(d => d.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<int> GetInventoryDiscussionsCountAsync(int inventoryId)
     {
         return await _context.Discussions
@@ -33,8 +43,12 @@ public class DiscussionService : IDiscussionService
 
     public async Task<Discussion> AddDiscussionAsync(Discussion discussion)
     {
+        discussion.CreatedAt = DateTime.UtcNow;
         _context.Discussions.Add(discussion);
         await _context.SaveChangesAsync();
+
+        // Return with user included
+        await _context.Entry(discussion).Reference(d => d.User).LoadAsync();
         return discussion;
     }
 
@@ -46,5 +60,12 @@ public class DiscussionService : IDiscussionService
             _context.Discussions.Remove(discussion);
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task<Discussion?> GetDiscussionByIdAsync(int id)
+    {
+        return await _context.Discussions
+            .Include(d => d.User)
+            .FirstOrDefaultAsync(d => d.Id == id);
     }
 }

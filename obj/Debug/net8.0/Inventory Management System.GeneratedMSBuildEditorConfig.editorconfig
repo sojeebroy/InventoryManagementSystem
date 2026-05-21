@@ -91,8 +91,20 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3JpZXNcU3RhdGlzdGljcy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/Itransition/Inventory Management System/Inventory Management System/Views/Inventories/_Access.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3JpZXNcX0FjY2Vzcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Itransition/Inventory Management System/Inventory Management System/Views/Inventories/_CustomId.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3JpZXNcX0N1c3RvbUlkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/Itransition/Inventory Management System/Inventory Management System/Views/Inventories/_Discussion.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3JpZXNcX0Rpc2N1c3Npb24uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Itransition/Inventory Management System/Inventory Management System/Views/Inventories/_Fields.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3JpZXNcX0ZpZWxkcy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Itransition/Inventory Management System/Inventory Management System/Views/Inventories/_Items.cshtml]

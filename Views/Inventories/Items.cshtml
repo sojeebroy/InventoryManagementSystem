@@ -168,7 +168,7 @@
             <div class="modal-body">
                 @if (!inventory.CustomFields.Any())
                 {
-                    <p class="text-muted text-center py-3">This inventory has no custom fields defined yet.</p>
+                    <p class="text-muted text-center py-3">Set The Custom Id first Then Create Item.</p>
                 }
                 <div id="itemFormFields">
                     @foreach (var field in inventory.CustomFields.OrderBy(f => f.DisplayOrder))
@@ -322,14 +322,54 @@
     }
 }
 
+<div class="modal fade" id="itemModal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="itemModalLabel">Add Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (!inventory.CustomFields.Any())
+                {
+                    <p class="text-muted text-center py-3">This inventory has no custom fields defined yet.</p>
+                }
+                <div id="itemFormFields">
+                    @foreach (var field in inventory.CustomFields.OrderBy(f => f.DisplayOrder))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" for="field_@field.FieldName">
+                                @field.Title
+                            </label>
+                            @if (!string.IsNullOrEmpty(field.Description))
+                            {
+                                <small class="text-muted d-block mb-1">@field.Description</small>
+                            }
+                            @Html.Raw(GetFieldInput(field))
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" id="saveBtn">Save Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
 <script>
 (function () {
     'use strict';
 
-    const INV_ID     = "@inventory.Id";
-    const USER_ID    = '@userId.Replace("'", "\\'")';
-    const CAN_EDIT   = '@(canEdit ? "true" : "false")';
-    const IS_AUTH    = '@(isAuthenticated ? "true" : "false")';
+    // Properly encode and quote all Razor values
+    const INV_ID     = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(inventory.Id));
+    const USER_ID    = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userId));
+    const CAN_EDIT   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(canEdit));
+    const IS_AUTH    = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(isAuthenticated));
+    const CUSTOM_ID_FORMAT = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(inventory.CustomIdFormat ?? ""));
 
     let bsModal = null;
     let editingItemId = null; // null = add mode, number = edit mode
@@ -354,6 +394,14 @@
     }
 
     function openAddModal() {
+        // Check if CustomIdFormat is configured
+        const format = CUSTOM_ID_FORMAT?.trim() || '';
+        
+        if (!format || format === '[]') {
+            showFlash('⚙️ Custom ID Format is not configured. Please set up a Custom ID Format in Settings before creating items.', 'warning');
+            return;
+        }
+
         editingItemId = null;
         resetForm();
         document.getElementById('itemModalLabel').textContent = 'Add Item';
@@ -492,8 +540,17 @@
                 sessionStorage.setItem('_flashMsg', isEdit ? 'Item updated successfully.' : 'Item added to inventory successfully.');
                 location.reload();
             } else {
-                const body = await resp.text().catch(() => '');
-                showFlash(body || `Error ${resp.status}: Could not save item.`, 'error');
+                try {
+                    const jsonBody = await resp.json().catch(() => null);
+                    if (jsonBody && jsonBody.error) {
+                        showFlash(jsonBody.error, 'error');
+                    } else {
+                        showFlash(`Error ${resp.status}: Could not save item.`, 'error');
+                    }
+                } catch {
+                    const body = await resp.text().catch(() => '');
+                    showFlash(body || `Error ${resp.status}: Could not save item.`, 'error');
+                }
             }
         } catch (err) {
             console.error('Save error:', err);

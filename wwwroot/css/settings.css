@@ -1,0 +1,493 @@
+/* Settings Page Styles */
+
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    --light-bg: #f8f9fa;
+    --border-color: #dee2e6;
+}
+
+/* ============== TAB STYLING ============== */
+.nav-tabs {
+    border-bottom: 2px solid var(--border-color);
+    gap: 0;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+}
+
+.nav-tabs .nav-link:hover {
+    border-bottom-color: var(--primary-color);
+    color: var(--primary-color);
+    background-color: transparent;
+}
+
+.nav-tabs .nav-link.active {
+    border-bottom-color: var(--primary-color);
+    color: var(--primary-color);
+    background-color: transparent;
+}
+
+.tab-content {
+    min-height: 400px;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-pane {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============== FIELD/ELEMENT ITEMS ============== */
+.field-item {
+    transition: all 0.2s ease-in-out;
+    border-radius: 0.375rem;
+}
+
+.field-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.field-item.drag-over {
+    background-color: #e7f3ff !important;
+    border: 2px dashed var(--primary-color);
+}
+
+.field-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+}
+
+.field-item .drag-handle {
+    cursor: grab;
+    color: #adb5bd;
+    transition: color 0.2s;
+}
+
+.field-item .drag-handle:hover {
+    color: #495057;
+}
+
+.field-item .drag-handle:active {
+    cursor: grabbing;
+}
+
+/* ============== ID ELEMENT BADGES ============== */
+.id-element-badge {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    background-color: #e9ecef;
+    border-radius: 0.375rem;
+    margin: 0.25rem;
+    cursor: move;
+    user-select: none;
+    transition: all 0.2s ease-in-out;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+
+.id-element-badge:hover {
+    background-color: #dee2e6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+
+.id-element-badge.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.id-element-badge .close-btn {
+    margin-left: 0.5rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.id-element-badge .close-btn:hover {
+    opacity: 1;
+}
+
+#idPreview {
+    display: block;
+    padding: 1rem;
+    background-color: var(--light-bg);
+    border-radius: 0.375rem;
+    border: 1px solid var(--border-color);
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    word-break: break-all;
+    min-height: 3rem;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #212529;
+}
+
+/* ============== CONTAINERS ============== */
+#idElementsContainer,
+#fieldsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-start;
+    min-height: 2rem;
+    padding: 0.75rem;
+    background-color: rgba(0, 0, 0, 0.01);
+    border-radius: 0.375rem;
+    border: 1px dashed var(--border-color);
+}
+
+#fieldsContainer {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+    padding: 0;
+    border: none;
+    background-color: transparent;
+}
+
+/* ============== MODALS ============== */
+.modal-header {
+    background-color: var(--light-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+    font-weight: 600;
+    color: #212529;
+}
+
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    background-color: var(--light-bg);
+    border-top: 1px solid var(--border-color);
+}
+
+/* ============== FORM ELEMENTS ============== */
+.form-label {
+    font-weight: 500;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+    border-radius: 0.375rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease-in-out;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-check-input {
+    cursor: pointer;
+}
+
+/* ============== BUTTONS ============== */
+.btn {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.btn-outline-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.25);
+}
+
+/* ============== BADGES & ALERTS ============== */
+.badge {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    padding: 0.4rem 0.6rem;
+}
+
+.alert {
+    border-radius: 0.375rem;
+    border-left: 4px solid;
+}
+
+.alert-info {
+    border-left-color: var(--info-color);
+    background-color: rgba(13, 202, 240, 0.1);
+}
+
+.alert-warning {
+    border-left-color: var(--warning-color);
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.alert-danger {
+    border-left-color: var(--danger-color);
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* ============== LISTS ============== */
+.list-group-item {
+    border-color: var(--border-color);
+    transition: all 0.2s ease-in-out;
+}
+
+.list-group-item:hover {
+    background-color: var(--light-bg);
+}
+
+.list-group-item.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* ============== CARDS ============== */
+.card {
+    border-color: var(--border-color);
+    border-radius: 0.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.card-title {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.75rem;
+}
+
+/* ============== SPINNERS ============== */
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+    border-width: 0.2em;
+    color: var(--primary-color);
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+/* ============== ANIMATIONS ============== */
+.status-saved {
+    animation: slideIn 0.3s ease-in-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* ============== RESPONSIVE DESIGN ============== */
+@media (max-width: 768px) {
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .tab-content {
+        min-height: 300px;
+    }
+
+    .id-element-badge {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.5rem;
+        margin: 0.2rem;
+    }
+
+    .id-element-badge .close-btn {
+        margin-left: 0.25rem;
+    }
+
+    #idPreview {
+        font-size: 1rem;
+        padding: 0.75rem;
+        min-height: 2.5rem;
+    }
+
+    #idElementsContainer {
+        padding: 0.5rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .btn-group {
+        flex-direction: column;
+    }
+
+    .btn-group > * {
+        margin-bottom: 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .nav-tabs .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .modal-dialog {
+        margin: 1rem;
+    }
+
+    .row > .col-auto {
+        flex: 0 0 100%;
+    }
+}
+
+/* ============== UTILITY CLASSES ============== */
+.d-drag-handle {
+    cursor: grab;
+}
+
+.d-drag-handle:active {
+    cursor: grabbing;
+}
+
+.text-muted-light {
+    color: #adb5bd;
+}
+
+.bg-hover-light {
+    transition: background-color 0.2s;
+}
+
+.bg-hover-light:hover {
+    background-color: var(--light-bg);
+}
+
+/* ============== ACCESSIBILITY ============== */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Field Item Animation for Deletion */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+}
+
+.field-item {
+    transition: all 0.3s ease-in-out;
+}
+
+.field-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #f0f2f5 !important;
+}
+
+.field-item[style*="opacity"] {
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Auto-save Indicator Styles */
+#autoSaveIndicator {
+    font-size: 0.875rem;
+    min-width: 140px;
+    text-align: right;
+}
+
+#savingIndicator .spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+    border-width: 0.2em;
+}
+
+#savedIndicator i {
+    font-size: 0.9rem;
+}
+
+/* Smooth transitions for alerts */
+.alert {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

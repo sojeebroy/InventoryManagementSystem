@@ -127,5 +127,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasIndex(d => d.InventoryId);
         builder.Entity<Discussion>()
             .HasIndex(d => d.UserId);
+        builder.Entity<Discussion>()
+            .HasIndex(d => new { d.InventoryId, d.CreatedAt });
     }
 }

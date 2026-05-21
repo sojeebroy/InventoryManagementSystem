@@ -86,23 +86,20 @@
 
             <ul class="nav nav-tabs" id="inventoryTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    @* [cite: 79] *@
                     <button class="nav-link active" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab">
                         Items
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    @* [cite: 80] *@
                     <button class="nav-link" id="discussion-tab" data-bs-toggle="tab" data-bs-target="#discussion" type="button" role="tab">
                         Discussion
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    @* [cite: 81] *@
                     <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics" type="button" role="tab">
                         Statistics
                     </button>
-                </li> @* [cite: 82] *@
+                </li> 
             </ul>
 
             <div class="tab-content">
@@ -138,118 +135,17 @@
                 </div>
             </div>
         </div>
-    </div> @* [cite: 89] *@
+    </div> 
 </div>
 
 @section Scripts {
+    <script src="~/js/Details.js" asp-append-version="true"></script>
+
     <script>
-        const inventoryId = '@Model.Id';
-        const canEdit = '@(ViewBag.CanEdit ? "true" : "false")';
-        const userId = '@ViewBag.UserId';
-
-        // Ensure DOM is fully evaluated before wiring up listeners to prevent layout drop bugs
-        document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById('items-tab').addEventListener('shown.bs.tab', function () {
-                loadItems();
-                clearDiscussionPolling();
-            });
-
-            document.getElementById('discussion-tab').addEventListener('shown.bs.tab', function () {
-                loadDiscussion(1);
-            });
-
-            document.getElementById('statistics-tab').addEventListener('shown.bs.tab', function () {
-                loadStatistics();
-                clearDiscussionPolling();
-            });
-
-            // Initial view load run
-            loadItems();
-
-            // ── Event delegation on #discussionContainer ──────────────
-            // Handles pagination, post form, and delete form — all without
-            // ever leaving the Details page / Discussion tab.
-            document.getElementById('discussionContainer').addEventListener('click', async function (e) {
-
-                // ── Pagination button ──────────────────────────────────
-                const pageBtn = e.target.closest('.disc-page-btn');
-                if (pageBtn) {
-                    e.preventDefault();
-                    await loadDiscussion(parseInt(pageBtn.dataset.page, 10));
-                    return;
-                }
-
-                // ── Delete form submit button ──────────────────────────
-                const deleteBtn = e.target.closest('[data-disc-delete] button[type="submit"]');
-                if (deleteBtn) {
-                    e.preventDefault();
-                    if (!confirm('Delete this comment?')) return;
-
-                    const form    = deleteBtn.closest('form[data-disc-delete]');
-                    const data    = new FormData(form);
-                    const page    = parseInt(data.get('returnPage'), 10) || 1;
-
-                    await fetch(form.action, { method: 'POST', body: data });
-                    await loadDiscussion(page);
-                    return;
-                }
-            });
-
-            // ── Post form submit (separate listener for submit event) ──
-            document.getElementById('discussionContainer').addEventListener('submit', async function (e) {
-                const postForm = e.target.closest('form[data-disc-post]');
-                if (!postForm) return;
-
-                e.preventDefault();
-
-                // HTML5 validation
-                if (!postForm.checkValidity()) {
-                    postForm.classList.add('was-validated');
-                    return;
-                }
-
-                const data = new FormData(postForm);
-                await fetch(postForm.action, { method: 'POST', body: data });
-
-                // After posting, jump to page 1 (newest first)
-                await loadDiscussion(1);
-            });
+        initDetailsPage({
+        inventoryId: '@Model.Id',
+        canEdit: '@(ViewBag.CanEdit ? "true" : "false")',
+        userId: '@ViewBag.UserId'
         });
-
-        function clearDiscussionPolling() {
-            if (window.discussionPollInterval) {
-                clearInterval(window.discussionPollInterval);
-            }
-        }
-
-        async function loadItems() {
-            try {
-                const response = await fetch(`/Inventories/ItemsPartial/${inventoryId}`);
-                document.getElementById('itemsContainer').innerHTML = await response.text();
-            } catch (error) {
-                console.error('Error loading items:', error);
-                document.getElementById('itemsContainer').innerHTML = '<p class="text-danger">Error loading items</p>';
-            }
-        }
-
-        async function loadDiscussion(page = 1) {
-            try {
-                const response = await fetch(`/Inventories/DiscussionPartial/${inventoryId}?page=${page}`);
-                document.getElementById('discussionContainer').innerHTML = await response.text();
-            } catch (error) {
-                console.error('Error loading discussion:', error);
-                document.getElementById('discussionContainer').innerHTML = '<p class="text-danger">Error loading discussion</p>';
-            }
-        }
-
-        async function loadStatistics() {
-            try {
-                const response = await fetch(`/Inventories/StatisticsPartial/${inventoryId}`);
-                document.getElementById('statisticsContainer').innerHTML = await response.text();
-            } catch (error) {
-                console.error('Error loading statistics:', error);
-                document.getElementById('statisticsContainer').innerHTML = '<p class="text-danger">Error loading statistics</p>';
-            }
-        }
     </script>
 }

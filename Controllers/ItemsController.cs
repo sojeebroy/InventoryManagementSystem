@@ -54,24 +54,21 @@ public class ItemsController : ControllerBase
         if (inventory == null)
             return NotFound("Inventory not found");
 
-        // Generate custom ID only if format is configured
-        string? customId = null;
-        List<CustomIdElement> format = new();
-
-        if (!string.IsNullOrEmpty(inventory.CustomIdFormat))
+        // Validate that CustomIdFormat is configured
+        if (string.IsNullOrEmpty(inventory.CustomIdFormat))
         {
-            format = JsonSerializer.Deserialize<List<CustomIdElement>>(inventory.CustomIdFormat) ?? new();
-            if (format.Count > 0)
-            {
-                customId = await _itemService.GenerateUniqueCustomIdAsync(dto.InventoryId, format);
-            }
+            return BadRequest(new { error = "CustomIdFormat not configured. Please set a Custom ID Format in Settings before creating items." });
         }
 
-        // If no format is configured, use a temporary format (GUID-based)
-        if (string.IsNullOrEmpty(customId))
+        // Generate custom ID based on configured format
+        List<CustomIdElement> format = JsonSerializer.Deserialize<List<CustomIdElement>>(inventory.CustomIdFormat) ?? new();
+
+        if (format.Count == 0)
         {
-            customId = $"ITEM-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+            return BadRequest(new { error = "CustomIdFormat is empty. Please configure at least one element for the Custom ID Format in Settings." });
         }
+
+        string customId = await _itemService.GenerateUniqueCustomIdAsync(dto.InventoryId, format);
 
         var item = new Item
         {

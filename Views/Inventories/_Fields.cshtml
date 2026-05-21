@@ -1,0 +1,599 @@
+@model Inventory
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h5 class="card-title mb-2">Custom Fields</h5>
+                <p class="text-muted small mb-0">
+                    Add up to 3 fields of each type to customize your items. Drag fields to reorder them.
+                </p>
+            </div>
+            <div id="autoSaveIndicator" class="ms-3">
+                <small class="text-muted d-none" id="savingIndicator">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving...
+                </small>
+                <small class="text-success d-none" id="savedIndicator">
+                    <i class="bi bi-check-circle me-2"></i>All changes saved
+                </small>
+            </div>
+        </div>
+
+        <div id="fieldsContainer" class="mb-4">
+            @foreach (var field in Model.CustomFields.OrderBy(f => f.DisplayOrder))
+            {
+                <div class="card mb-2 field-item" data-field-id="@field.Id" draggable="true" style="background-color: #f8f9fa; cursor: move;">
+                    <div class="card-body p-3">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-grip-vertical text-muted"></i>
+                                    <div>
+                                        <h6 class="mb-1">@field.Title</h6>
+                                        <small class="text-muted">
+                                            @field.FieldType
+                                            @if (field.Description != null)
+                                            {
+                                                <text> • @field.Description</text>
+                                            }
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge @(field.IsVisibleInTable ? "bg-info" : "bg-secondary")">
+                                    @(field.IsVisibleInTable ? "Visible" : "Hidden")
+                                </span>
+                                <button type="button" class="btn btn-sm btn-outline-warning editFieldBtn ms-2" data-field-id="@field.Id">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger deleteFieldBtn" data-field-id="@field.Id">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (!Model.CustomFields.Any())
+            {
+                <div class="alert alert-secondary text-center py-4">
+                    <p class="mb-0">No custom fields added yet. Click "Add Custom Field" to get started.</p>
+                </div>
+            }
+        </div>
+
+        <div class="alert alert-info small mb-4" id="fieldLimitAlert" style="display: none;">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            You have reached the limit for one or more field types (3 fields maximum per type).
+        </div>
+
+        <div class="alert alert-danger small mb-4" id="fieldErrorAlert" style="display: none;">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <span id="fieldErrorMessage"></span>
+        </div>
+
+        <button type="button" class="btn btn-outline-primary" id="addFieldBtn">
+            <i class="bi bi-plus-lg"></i> Add Custom Field
+        </button>
+    </div>
+</div>
+
+<!-- Add/Edit Field Modal -->
+<div class="modal fade" id="fieldModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fieldModalTitle">Add Custom Field</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="fieldForm">
+                    <input type="hidden" id="fieldIdInput">
+                    <div class="mb-3">
+                        <label class="form-label" for="fieldNameInput">Field Name *</label>
+                        <input type="text" class="form-control" id="fieldNameInput" required maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="fieldTypeSelect">Field Type *</label>
+                        <select class="form-select" id="fieldTypeSelect" required disabled>
+                            <option value="">Select type</option>
+                            <option value="SingleLineText">Single Line Text</option>
+                            <option value="MultiLineText">Multi-Line Text</option>
+                            <option value="Numeric">Numeric</option>
+                            <option value="Boolean">Boolean (Yes/No)</option>
+                            <option value="Link">Link/URL</option>
+                        </select>
+                        <small class="text-muted d-block mt-1">Type cannot be changed after creation</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="fieldDescriptionInput">Description (optional)</label>
+                        <textarea class="form-control" id="fieldDescriptionInput" rows="2" placeholder="Help text for users" maxlength="500"></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="fieldVisibleCheck" checked>
+                        <label class="form-check-label" for="fieldVisibleCheck">
+                            Visible in item table
+                        </label>
+                        <small class="text-muted d-block mt-1">Show this field in the items list view</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="deleteFieldModalBtn" style="display: none;">Delete</button>
+                <button type="button" class="btn btn-primary" id="saveFieldBtn">Save Field</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let fieldModal; // Will be initialized when DOM is ready
+    const fieldTypeMaxLimits = 3;
+
+    // Auto-save and debouncing
+    let reorderPending = false;
+    let reorderTimeout = null;
+    const REORDER_DEBOUNCE_DELAY = 1000; // 1 second debounce for reordering
+
+    // Utility function to show auto-save status
+    function showSavingStatus() {
+        document.getElementById('savingIndicator').classList.remove('d-none');
+        document.getElementById('savedIndicator').classList.add('d-none');
+    }
+
+    function showSavedStatus() {
+        document.getElementById('savingIndicator').classList.add('d-none');
+        document.getElementById('savedIndicator').classList.remove('d-none');
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            document.getElementById('savedIndicator').classList.add('d-none');
+        }, 3000);
+    }
+
+    // Count fields by type
+    function getFieldCountByType(fieldType) {
+        return document.querySelectorAll(`.field-item`).length > 0 
+            ? Array.from(document.querySelectorAll('.field-item')).filter(el => {
+                const typeText = el.querySelector('small')?.textContent || '';
+                return typeText.includes(fieldType);
+            }).length
+            : 0;
+    }
+
+    // Update field count display and add button state
+    function updateFieldLimitStatus() {
+        const fieldCounts = {
+            'SingleLineText': 0,
+            'MultiLineText': 0,
+            'Numeric': 0,
+            'Boolean': 0,
+            'Link': 0
+        };
+
+        document.querySelectorAll('.field-item').forEach(el => {
+            const typeText = el.querySelector('small')?.textContent || '';
+            if (typeText.includes('SingleLineText')) fieldCounts.SingleLineText++;
+            else if (typeText.includes('MultiLineText')) fieldCounts.MultiLineText++;
+            else if (typeText.includes('Numeric')) fieldCounts.Numeric++;
+            else if (typeText.includes('Boolean')) fieldCounts.Boolean++;
+            else if (typeText.includes('Link')) fieldCounts.Link++;
+        });
+
+        // Check if any type has reached limit
+        const hasReachedLimit = Object.values(fieldCounts).some(count => count >= fieldTypeMaxLimits);
+        document.getElementById('fieldLimitAlert').style.display = hasReachedLimit ? 'block' : 'none';
+
+        // Update field type select options
+        const fieldTypeSelect = document.getElementById('fieldTypeSelect');
+        const selectedType = fieldTypeSelect.value;
+
+        Array.from(fieldTypeSelect.options).forEach(option => {
+            if (option.value === '') return;
+
+            const optionType = option.value;
+            const currentCount = fieldCounts[optionType] || 0;
+
+            if (currentCount >= fieldTypeMaxLimits && optionType !== selectedType) {
+                option.disabled = true;
+                option.textContent = option.textContent.split(' (')[0] + ` (${currentCount}/${fieldTypeMaxLimits})`;
+            } else if (option.disabled && optionType === selectedType) {
+                option.disabled = false;
+            }
+        });
+    }
+
+    // Add field button click
+    document.getElementById('addFieldBtn').addEventListener('click', () => {
+        document.getElementById('fieldModalTitle').textContent = 'Add Custom Field';
+        document.getElementById('fieldForm').reset();
+        document.getElementById('fieldIdInput').value = '';
+        document.getElementById('fieldTypeSelect').disabled = false;
+        document.getElementById('deleteFieldModalBtn').style.display = 'none';
+        updateFieldLimitStatus();
+        fieldModal.show();
+    });
+
+    // Edit field button click
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.editFieldBtn')) {
+            const fieldId = e.target.closest('.editFieldBtn').dataset.fieldId;
+            const fieldElement = document.querySelector(`[data-field-id="${fieldId}"]`);
+            const title = fieldElement.querySelector('h6')?.textContent || '';
+            const typeText = fieldElement.querySelector('small')?.textContent || '';
+            const description = typeText.split('•')[1]?.trim() || '';
+
+            // Extract field type from the first word of typeText
+            let type = '';
+            if (typeText.includes('SingleLineText')) type = 'SingleLineText';
+            else if (typeText.includes('MultiLineText')) type = 'MultiLineText';
+            else if (typeText.includes('Numeric')) type = 'Numeric';
+            else if (typeText.includes('Boolean')) type = 'Boolean';
+            else if (typeText.includes('Link')) type = 'Link';
+
+            const isVisible = fieldElement.querySelector('.badge').classList.contains('bg-info');
+
+            document.getElementById('fieldModalTitle').textContent = 'Edit Custom Field';
+            document.getElementById('fieldIdInput').value = fieldId;
+            document.getElementById('fieldNameInput').value = title;
+            document.getElementById('fieldTypeSelect').value = type;
+            document.getElementById('fieldTypeSelect').disabled = true;
+            document.getElementById('fieldDescriptionInput').value = description;
+            document.getElementById('fieldVisibleCheck').checked = isVisible;
+            document.getElementById('deleteFieldModalBtn').style.display = 'block';
+            fieldModal.show();
+        }
+    });
+
+    // Delete field button in modal
+    document.getElementById('deleteFieldModalBtn').addEventListener('click', async () => {
+        const fieldId = document.getElementById('fieldIdInput').value;
+        if (confirm('Are you sure you want to delete this field? All data in this field will be lost.')) {
+            await deleteField(fieldId);
+        }
+    });
+
+    // Delete field (direct button on card)
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('.deleteFieldBtn')) {
+            const fieldId = e.target.closest('.deleteFieldBtn').dataset.fieldId;
+            if (confirm('Are you sure you want to delete this field? All data in this field will be lost.')) {
+                await deleteField(fieldId);
+            }
+        }
+    });
+
+    // Save field (create or update)
+    document.getElementById('saveFieldBtn').addEventListener('click', async () => {
+        const fieldId = document.getElementById('fieldIdInput').value;
+        const fieldName = document.getElementById('fieldNameInput').value;
+        const fieldType = document.getElementById('fieldTypeSelect').value;
+        const description = document.getElementById('fieldDescriptionInput').value;
+        const isVisible = document.getElementById('fieldVisibleCheck').checked;
+
+        if (!fieldName || !fieldType) {
+            showFieldError('Please fill in all required fields');
+            return;
+        }
+
+        if (fieldName.length > 100) {
+            showFieldError('Field name must be 100 characters or less');
+            return;
+        }
+
+        if (description.length > 500) {
+            showFieldError('Description must be 500 characters or less');
+            return;
+        }
+
+        try {
+            showSavingStatus();
+
+            const url = fieldId 
+                ? `/Inventories/UpdateCustomField?id=${fieldId}` 
+                : '/Inventories/CreateCustomField?inventoryId=' + window.inventoryId;
+            const method = 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: JSON.stringify({
+                    title: fieldName,
+                    description: description || null,
+                    fieldType: fieldType,
+                    isVisibleInTable: isVisible
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                // Optimistic UI update
+                if (fieldId) {
+                    // Update existing field
+                    updateFieldInUI(fieldId, fieldName, fieldType, description, isVisible);
+                } else {
+                    // Add new field to UI (created with server response)
+                    const newFieldId = result.field?.id || Date.now();
+                    addFieldToUI(newFieldId, fieldName, fieldType, description, isVisible);
+                }
+
+                fieldModal.hide();
+                showSavedStatus();
+                updateFieldLimitStatus();
+
+                // Optional: Full reload after a delay for data consistency
+                setTimeout(() => {
+                    // location.reload(); // Uncomment for full reload
+                }, 2000);
+            } else {
+                showFieldError(result.error || 'Unknown error occurred');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showFieldError('Error saving field. Please try again.');
+        }
+    });
+
+    // Delete field function
+    async function deleteField(fieldId) {
+        try {
+            showSavingStatus();
+
+            // Optimistic UI update - remove from list
+            removeFieldFromUI(fieldId);
+
+            const response = await fetch(`/Inventories/DeleteCustomField?id=${fieldId}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                }
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                fieldModal.hide();
+                showSavedStatus();
+                updateFieldLimitStatus();
+            } else {
+                // Undo optimistic update on error
+                location.reload();
+                showFieldError('Error deleting field');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            // Undo optimistic update on error
+            location.reload();
+            showFieldError('Error deleting field. Please try again.');
+        }
+    }
+
+    // Show error message
+    function showFieldError(message) {
+        const errorAlert = document.getElementById('fieldErrorAlert');
+        const errorMessage = document.getElementById('fieldErrorMessage');
+        errorMessage.textContent = message;
+        errorAlert.style.display = 'block';
+
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            errorAlert.style.display = 'none';
+        }, 5000);
+    }
+
+    // Optimistic UI: Update field in list
+    function updateFieldInUI(fieldId, title, fieldType, description, isVisible) {
+        const fieldElement = document.querySelector(`[data-field-id="${fieldId}"]`);
+        if (fieldElement) {
+            const titleEl = fieldElement.querySelector('h6');
+            const smallEl = fieldElement.querySelector('small');
+            const badgeEl = fieldElement.querySelector('.badge');
+
+            if (titleEl) titleEl.textContent = title;
+            if (smallEl) {
+                smallEl.innerHTML = `${fieldType}${description ? ' • ' + description : ''}`;
+            }
+            if (badgeEl) {
+                badgeEl.textContent = isVisible ? 'Visible' : 'Hidden';
+                badgeEl.className = isVisible ? 'badge bg-info' : 'badge bg-secondary';
+            }
+        }
+    }
+
+    // Optimistic UI: Add new field to list
+    function addFieldToUI(fieldId, title, fieldType, description, isVisible) {
+        const fieldsContainer = document.getElementById('fieldsContainer');
+
+        // Remove empty state if exists
+        const emptyAlert = fieldsContainer.querySelector('.alert-secondary');
+        if (emptyAlert) {
+            emptyAlert.remove();
+        }
+
+        const fieldElement = document.createElement('div');
+        fieldElement.className = 'card mb-2 field-item';
+        fieldElement.setAttribute('data-field-id', fieldId);
+        fieldElement.setAttribute('draggable', 'true');
+        fieldElement.style.backgroundColor = '#f8f9fa';
+        fieldElement.style.cursor = 'move';
+
+        fieldElement.innerHTML = `
+            <div class="card-body p-3">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-grip-vertical text-muted"></i>
+                            <div>
+                                <h6 class="mb-1">${escapeHtml(title)}</h6>
+                                <small class="text-muted">
+                                    ${fieldType}${description ? ' • ' + escapeHtml(description) : ''}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge ${isVisible ? 'bg-info' : 'bg-secondary'}">
+                            ${isVisible ? 'Visible' : 'Hidden'}
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-warning editFieldBtn ms-2" data-field-id="${fieldId}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger deleteFieldBtn" data-field-id="${fieldId}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        fieldsContainer.appendChild(fieldElement);
+
+        // Re-attach drag event listeners to new element
+        attachDragListeners(fieldElement);
+    }
+
+    // Optimistic UI: Remove field from list
+    function removeFieldFromUI(fieldId) {
+        const fieldElement = document.querySelector(`[data-field-id="${fieldId}"]`);
+        if (fieldElement) {
+            fieldElement.style.animation = 'fadeOut 0.3s ease-out';
+            setTimeout(() => {
+                fieldElement.remove();
+
+                // Show empty state if no fields left
+                if (document.querySelectorAll('.field-item').length === 0) {
+                    const fieldsContainer = document.getElementById('fieldsContainer');
+                    const emptyAlert = document.createElement('div');
+                    emptyAlert.className = 'alert alert-secondary text-center py-4';
+                    emptyAlert.innerHTML = '<p class="mb-0">No custom fields added yet. Click "Add Custom Field" to get started.</p>';
+                    fieldsContainer.appendChild(emptyAlert);
+                }
+            }, 300);
+        }
+    }
+
+    // Utility function to escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Helper to attach drag listeners to field elements
+    function attachDragListeners(fieldElement) {
+        fieldElement.addEventListener('dragstart', (e) => {
+            draggedElement = fieldElement;
+            fieldElement.style.opacity = '0.5';
+            fieldElement.style.backgroundColor = '#e9ecef';
+        });
+
+        fieldElement.addEventListener('dragend', (e) => {
+            fieldElement.style.opacity = '1';
+            fieldElement.style.backgroundColor = '#f8f9fa';
+        });
+    }
+
+    // ===== Drag and drop reordering =====
+    let draggedElement = null;
+    const fieldsContainer = document.getElementById('fieldsContainer');
+
+    fieldsContainer.addEventListener('dragstart', (e) => {
+        draggedElement = e.target.closest('.field-item');
+        if (draggedElement) {
+            draggedElement.style.opacity = '0.5';
+            draggedElement.style.backgroundColor = '#e9ecef';
+        }
+    });
+
+    fieldsContainer.addEventListener('dragend', (e) => {
+        if (draggedElement) {
+            draggedElement.style.opacity = '1';
+            draggedElement.style.backgroundColor = '#f8f9fa';
+        }
+    });
+
+    fieldsContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(fieldsContainer, e.clientY);
+        if (afterElement == null) {
+            fieldsContainer.appendChild(draggedElement);
+        } else {
+            fieldsContainer.insertBefore(draggedElement, afterElement);
+        }
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.field-item:not([style*="opacity"])')]
+            .filter(el => el !== draggedElement);
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    fieldsContainer.addEventListener('drop', async () => {
+        // Mark that reorder is pending
+        reorderPending = true;
+
+        // Clear existing timeout
+        if (reorderTimeout) {
+            clearTimeout(reorderTimeout);
+        }
+
+        // Set new debounced timeout for auto-save
+        reorderTimeout = setTimeout(async () => {
+            const newOrder = [];
+            document.querySelectorAll('.field-item').forEach((el, idx) => {
+                newOrder.push({ id: parseInt(el.dataset.fieldId), order: idx });
+            });
+
+            try {
+                showSavingStatus();
+
+                const response = await fetch(`/Inventories/ReorderCustomFields?inventoryId=${window.inventoryId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    },
+                    body: JSON.stringify(newOrder)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    reorderPending = false;
+                    showSavedStatus();
+                } else {
+                    showFieldError('Error reordering fields');
+                }
+            } catch (error) {
+                console.error('Error reordering:', error);
+                showFieldError('Error reordering fields. Please try again.');
+            }
+        }, REORDER_DEBOUNCE_DELAY);
+    });
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize Bootstrap modal
+        fieldModal = new bootstrap.Modal(document.getElementById('fieldModal'));
+        updateFieldLimitStatus();
+    });
+</script>
+
+<link rel="stylesheet" href="~/css/settings.css" />
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+<script src="/_framework/aspnetcore-browser-refresh.js"></script>

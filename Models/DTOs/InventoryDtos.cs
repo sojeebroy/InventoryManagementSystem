@@ -103,3 +103,10 @@ public class ItemLikeDto
 {
     public int ItemId { get; set; }
 }
+
+public class FieldReorderDto
+{
+    public int Id { get; set; }
+    public int Order { get; set; }
+}
+

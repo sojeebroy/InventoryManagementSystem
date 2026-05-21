@@ -55,7 +55,6 @@ wwwroot\lib\bootstrap\LICENSE
 wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.js
 wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.min.js
 wwwroot\lib\jquery-validation-unobtrusive\LICENSE.txt
-wwwroot\lib\jquery-validation\dist\additional-methods.js
 wwwroot\lib\jquery-validation\dist\additional-methods.min.js
 wwwroot\lib\jquery-validation\dist\jquery.validate.js
 wwwroot\lib\jquery-validation\dist\jquery.validate.min.js
@@ -63,4 +62,9 @@ wwwroot\lib\jquery-validation\LICENSE.md
 wwwroot\lib\jquery\dist\jquery.js
 wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
+wwwroot\lib\jquery-validation\dist\additional-methods.js
 wwwroot\lib\jquery\LICENSE.txt
+wwwroot\js\realtime-discussions.js
+wwwroot\css\settings.css
+wwwroot\js\Details.js
+wwwroot\js\Settings.js

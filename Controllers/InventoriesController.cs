@@ -17,6 +17,7 @@ public class InventoriesController : Controller
     private readonly IItemService _itemService;
     private readonly IDiscussionService _discussionService;
     private readonly IStatisticsService _statisticsService;
+    private readonly ICustomFieldService _customFieldService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ICloudinaryService _cloudinaryService;
 
@@ -26,6 +27,7 @@ public class InventoriesController : Controller
         IItemService itemService,
         IDiscussionService discussionService,
         IStatisticsService statisticsService,
+        ICustomFieldService customFieldService,
         UserManager<ApplicationUser> userManager,
         ICloudinaryService cloudinaryService)
     {
@@ -34,6 +36,7 @@ public class InventoriesController : Controller
         _itemService = itemService;
         _discussionService = discussionService;
         _statisticsService = statisticsService;
+        _customFieldService = customFieldService;
         _userManager = userManager;
         _cloudinaryService = cloudinaryService;
     }
@@ -566,5 +569,217 @@ public class InventoriesController : Controller
         ViewBag.TotalDiscussions = discussions.Count;
 
         return PartialView("_Statistics", stats);
+    }
+
+    // ===== Custom ID Format Settings =====
+    [HttpPost]
+    [Route("/Inventories/SaveCustomIdFormat")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveCustomIdFormat([FromQuery] int id, [FromBody] JsonElement format)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId) || !await _authService.CanEditInventoryAsync(id, userId))
+            return Forbid();
+
+        var inventory = await _inventoryService.GetInventoryByIdForUpdateAsync(id);
+        if (inventory == null)
+            return NotFound();
+
+        // Validate the JSON payload
+        if (format.ValueKind == JsonValueKind.Null || format.ValueKind == JsonValueKind.Undefined)
+        {
+            return BadRequest(new { success = false, error = "Format cannot be empty" });
+        }
+
+        // Try to parse as array
+        if (format.ValueKind != JsonValueKind.Array)
+        {
+            return BadRequest(new { success = false, error = "Format must be an array" });
+        }
+
+        using var doc = JsonDocument.Parse(format.GetRawText());
+        var array = doc.RootElement;
+
+        if (array.GetArrayLength() == 0)
+        {
+            return BadRequest(new { success = false, error = "Format cannot be empty" });
+        }
+
+        // Convert JSON to List<CustomIdElement>
+        List<CustomIdElement> formatList = new();
+
+        try
+        {
+            foreach (var item in array.EnumerateArray())
+            {
+                if (!item.TryGetProperty("type", out var typeElement))
+                {
+                    return BadRequest(new { success = false, error = "Each element must have a 'type' property" });
+                }
+
+                string typeStr = typeElement.GetString() ?? "";
+
+                // Convert string type to enum
+                if (!Enum.TryParse<CustomIdElementType>(typeStr, ignoreCase: true, out var typeEnum))
+                {
+                    return BadRequest(new { success = false, error = $"Invalid type: {typeStr}" });
+                }
+
+                var element = new CustomIdElement { Type = typeEnum };
+
+                // Parse optional properties
+                if (item.TryGetProperty("value", out var valueElement) && valueElement.ValueKind == JsonValueKind.String)
+                {
+                    element.Value = valueElement.GetString() ?? "";
+                }
+
+                if (item.TryGetProperty("length", out var lengthElement) && lengthElement.ValueKind == JsonValueKind.Number)
+                {
+                    element.Length = lengthElement.GetInt32();
+                }
+
+                formatList.Add(element);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing format: {ex.Message}");
+            return BadRequest(new { success = false, error = $"Invalid format data: {ex.Message}" });
+        }
+
+        // Save to database
+        inventory.CustomIdFormat = JsonSerializer.Serialize(formatList);
+        inventory.UpdatedAt = DateTime.UtcNow;
+
+        await _inventoryService.UpdateInventoryAsync(inventory);
+
+        // Generate preview
+        var preview = formatList.Aggregate(new System.Text.StringBuilder(), (sb, el) => sb.Append(el.GetPreview())).ToString();
+
+        return Json(new { success = true, preview = preview });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CheckCustomIdFormat(int id)
+    {
+        var inventory = await _inventoryService.GetInventoryByIdAsync(id);
+        if (inventory == null)
+            return NotFound(new { hasCustomIdFormat = false });
+
+        bool hasFormat = !string.IsNullOrEmpty(inventory.CustomIdFormat);
+        return Ok(new { hasCustomIdFormat = hasFormat });
+    }
+
+    // ===== Custom Fields Management =====
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GetCustomFields(int id)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId) || !await _authService.CanEditInventoryAsync(id, userId))
+            return Forbid();
+
+        var fields = await _customFieldService.GetInventoryCustomFieldsAsync(id);
+        return Json(fields);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateCustomField(int inventoryId, [FromBody] CustomField field)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId) || !await _authService.CanEditInventoryAsync(inventoryId, userId))
+            return Forbid();
+
+        field.InventoryId = inventoryId;
+
+        try
+        {
+            var created = await _customFieldService.CreateCustomFieldAsync(field);
+            return Json(new { success = true, field = created });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Json(new { success = false, error = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateCustomField(int id, [FromBody] CustomField field)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+            return Forbid();
+
+        var existing = await _customFieldService.GetCustomFieldAsync(id);
+        if (existing == null)
+            return NotFound();
+
+        if (!await _authService.CanEditInventoryAsync(existing.InventoryId, userId))
+            return Forbid();
+
+        field.Id = id;
+        field.InventoryId = existing.InventoryId;
+        field.FieldName = existing.FieldName;
+        field.FieldType = existing.FieldType;
+
+        var updated = await _customFieldService.UpdateCustomFieldAsync(field);
+        return Json(new { success = true, field = updated });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteCustomField(int id)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+            return Forbid();
+
+        var field = await _customFieldService.GetCustomFieldAsync(id);
+        if (field == null)
+            return NotFound();
+
+        if (!await _authService.CanEditInventoryAsync(field.InventoryId, userId))
+            return Forbid();
+
+        await _customFieldService.DeleteCustomFieldAsync(id);
+        return Json(new { success = true });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReorderCustomFields(int inventoryId, [FromBody] List<FieldReorderDto> order)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId) || !await _authService.CanEditInventoryAsync(inventoryId, userId))
+            return Forbid();
+
+        await _customFieldService.ReorderCustomFieldsAsync(inventoryId, order);
+        return Json(new { success = true });
+    }
+
+    // ===== Discussion Real-time Updates =====
+    [AllowAnonymous]
+    [HttpPost]
+    public async Task<IActionResult> GetDiscussionsSince(int inventoryId, [FromBody] DateTime since)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var inventory = await _inventoryService.GetInventoryByIdAsync(inventoryId);
+
+        if (inventory == null)
+            return NotFound();
+
+        // Check visibility
+        bool isPublic = inventory.Visibility == VisibilityType.Public;
+        if (!isPublic && (string.IsNullOrEmpty(userId) ||
+            (inventory.OwnerId != userId &&
+             !inventory.AccessControls.Any(ac => ac.UserId == userId))))
+        {
+            return Forbid();
+        }
+
+        var newDiscussions = await _discussionService.GetInventoryDiscussionsSinceAsync(inventoryId, since);
+        return Json(newDiscussions);
     }
 }

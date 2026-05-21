@@ -32,8 +32,24 @@
         document.getElementById('addFirstItem')?.addEventListener('click', openAddModal);
     }
 
-    function openAddModal() {
+    async function openAddModal() {
         editingItemId = null;
+
+        // Check if CustomIdFormat is set before allowing item creation
+        try {
+            const resp = await fetch(`/Inventories/CheckCustomIdFormat?id=${INV_ID}`);
+            const data = await resp.json();
+
+            if (!data.hasCustomIdFormat) {
+                showFlash('⚠️ Please set a Custom ID Format first before adding items. Go to Settings → Custom ID Format.', 'warning');
+                return;
+            }
+        } catch (err) {
+            console.error('Error checking CustomIdFormat:', err);
+            showFlash('Could not verify Custom ID Format. Please try again.', 'error');
+            return;
+        }
+
         resetForm();
         document.getElementById('itemModalLabel').textContent = 'Add Item';
         document.getElementById('saveBtn').textContent = 'Save Item';
@@ -173,8 +189,18 @@
                 sessionStorage.setItem('_flashMsg', isEdit ? 'Item updated successfully.' : 'Item added to inventory successfully.');
                 location.reload();
             } else {
-                const body = await resp.text().catch(() => '');
-                showFlash(body || `Error ${resp.status}: Could not save item.`, 'error');
+                // Try to parse JSON error response
+                let errorMsg = `Error ${resp.status}: Could not save item.`;
+                try {
+                    const errorBody = await resp.json();
+                    if (errorBody.error) {
+                        errorMsg = errorBody.error;
+                    }
+                } catch (e) {
+                    const textBody = await resp.text().catch(() => '');
+                    if (textBody) errorMsg = textBody;
+                }
+                showFlash(errorMsg, 'error');
             }
         } catch (err) {
             console.error('Save error:', err);

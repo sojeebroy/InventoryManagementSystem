@@ -33,6 +33,13 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+// Configure cookie policies for SameSite security
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
+
 // Add OAuth Authentication
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
@@ -71,6 +78,7 @@ builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IInventoryAuthorizationService, InventoryAuthorizationService>();
 builder.Services.AddScoped<ICustomIdService, CustomIdService>();
+builder.Services.AddScoped<ICustomFieldService, CustomFieldService>();
 builder.Services.AddScoped<IDiscussionService, DiscussionService>();
 builder.Services.AddScoped<IStatisticsService, StatisticsService>();
 builder.Services.AddScoped<ICloudinaryService>(provider =>
