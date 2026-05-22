@@ -1,0 +1,25 @@
+@* Theme Toggle Component *@
+<div class="theme-switcher ms-2" title="Toggle theme">
+    <button id="themeToggle" 
+            class="btn btn-sm btn-outline-secondary" 
+            type="button"
+            data-bs-toggle="tooltip"
+            data-bs-title="Switch to Dark Theme">
+        <i id="themeIcon" class="bi bi-moon-fill"></i>
+        <span class="d-none d-md-inline ms-2">Theme</span>
+    </button>
+</div>
+
+<style>
+    .theme-switcher button {
+        transition: all 0.3s ease;
+    }
+
+    .theme-switcher button:hover {
+        background-color: var(--bg-hover);
+    }
+
+    .theme-switcher i {
+        font-size: 1.1rem;
+    }
+</style>
