@@ -1,10 +1,12 @@
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Inventory_Management_System.Models;
+using Inventory_Management_System.Models.ViewModels;
+using Inventory_Management_System.Services.Interfaces;
 
 namespace Inventory_Management_System.Controllers;
 
@@ -13,20 +15,20 @@ public class AccountController : Controller
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<AccountController> _logger;
+    private readonly IInventoryService _inventoryService;
 
     public AccountController(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
-        ILogger<AccountController> logger)
+        ILogger<AccountController> logger,
+        IInventoryService inventoryService)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _logger = logger;
+        _inventoryService = inventoryService;
     }
 
-    /// <summary>
-    /// Login page with social login options
-    /// </summary>
     [HttpGet]
     [AllowAnonymous]
     public IActionResult Login(string? returnUrl = null)
@@ -38,23 +40,16 @@ public class AccountController : Controller
         return View();
     }
 
-    /// <summary>
-    /// Initiate external (OAuth) login
-    /// </summary>
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public IActionResult LoginWithProvider(string provider, string? returnUrl = null)
     {
-        // Redirect to external provider for authentication
         var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { returnUrl });
         var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
         return Challenge(properties, provider);
     }
 
-    /// <summary>
-    /// Callback from external provider (Google/Facebook)
-    /// </summary>
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> ExternalLoginCallback(string? returnUrl = null, string? remoteError = null)
@@ -74,11 +69,9 @@ public class AccountController : Controller
             return RedirectToAction(nameof(Login));
         }
 
-        // Get provider name and user ID
         var provider = info.LoginProvider;
         var providerUserId = info.ProviderKey;
 
-        // Try to sign in existing user
         var result = await _signInManager.ExternalLoginSignInAsync(provider, providerUserId, isPersistent: false, bypassTwoFactor: true);
 
         if (result.Succeeded)
@@ -86,14 +79,12 @@ public class AccountController : Controller
             var user = await _userManager.FindByLoginAsync(provider, providerUserId);
             if (user != null)
             {
-                // Check if user is blocked
                 if (user.IsBlocked)
                 {
                     await _signInManager.SignOutAsync();
                     return RedirectToAction("BlockedUser");
                 }
 
-                // Update last login time
                 user.LastLoginAt = DateTime.UtcNow;
                 await _userManager.UpdateAsync(user);
 
@@ -103,20 +94,17 @@ public class AccountController : Controller
             return LocalRedirect(returnUrl);
         }
 
-        // If we get here, new user - need to create account
         if (result.IsNotAllowed || result.IsLockedOut)
         {
             return RedirectToAction(nameof(Login));
         }
 
-        // Extract user info from provider
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
         var name = info.Principal.FindFirstValue(ClaimTypes.Name);
         var givenName = info.Principal.FindFirstValue(ClaimTypes.GivenName);
         var surname = info.Principal.FindFirstValue(ClaimTypes.Surname);
         var pictureUrl = info.Principal.FindFirstValue("picture");
 
-        // Create new user
         var newUser = new ApplicationUser
         {
             Email = email ?? $"{provider}_{providerUserId}@oauth.local",
@@ -130,7 +118,6 @@ public class AccountController : Controller
             LastLoginAt = DateTime.UtcNow
         };
 
-        // Ensure unique email
         int counter = 1;
         var originalEmail = newUser.Email;
         while (await _userManager.FindByEmailAsync(newUser.Email) != null)
@@ -140,7 +127,6 @@ public class AccountController : Controller
             counter++;
         }
 
-        // Create user without password (OAuth users don't have passwords)
         var createResult = await _userManager.CreateAsync(newUser);
         if (!createResult.Succeeded)
         {
@@ -151,7 +137,6 @@ public class AccountController : Controller
             return RedirectToAction(nameof(Login));
         }
 
-        // Add external login
         var addLoginResult = await _userManager.AddLoginAsync(newUser, info);
         if (!addLoginResult.Succeeded)
         {
@@ -162,10 +147,7 @@ public class AccountController : Controller
             return RedirectToAction(nameof(Login));
         }
 
-        // Assign User role by default
         await _userManager.AddToRoleAsync(newUser, "User");
-
-        // Sign in new user
         await _signInManager.SignInAsync(newUser, isPersistent: false);
 
         _logger.LogInformation("New user {Email} created and signed in via {Provider}", newUser.Email, provider);
@@ -173,9 +155,66 @@ public class AccountController : Controller
         return LocalRedirect(returnUrl);
     }
 
-    /// <summary>
-    /// Display blocked user message
-    /// </summary>
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> Profile(string? id, int ownedPage = 1, int ownedPageSize = 10)
+    {
+        if (string.IsNullOrEmpty(id))
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+            id = currentUserId;
+        }
+
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null)
+            return NotFound();
+
+        var roles = await _userManager.GetRolesAsync(user);
+
+        var vm = new UserProfileViewModel
+        {
+            Id = user.Id,
+            UserName = user.UserName ?? "",
+            Email = user.Email ?? "",
+            FirstName = user.FirstName ?? "",
+            LastName = user.LastName ?? "",
+            Provider = user.Provider,
+            ProfilePictureUrl = user.ProfilePictureUrl,
+            IsBlocked = user.IsBlocked,
+            CreatedAt = user.CreatedAt,
+            LastLoginAt = user.LastLoginAt,
+            Roles = roles.ToList()
+        };
+
+        var ownedInventoriesAll = await _inventoryService.GetOwnedInventoriesAsync(user.Id) ?? new List<Inventory>();
+
+        var totalCount = ownedInventoriesAll.Count;
+        var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)ownedPageSize));
+
+        ownedPage = Math.Max(1, ownedPage);
+        ownedPage = Math.Min(ownedPage, totalPages);
+
+        var pagedOwned = ownedInventoriesAll
+            .Skip((ownedPage - 1) * ownedPageSize)
+            .Take(ownedPageSize)
+            .ToList();
+
+        ViewBag.OwnedInventories = pagedOwned;
+        ViewBag.OwnedTotalPages = totalPages;
+        ViewBag.OwnedCurrentPage = ownedPage;
+        ViewBag.OwnedTotalCount = totalCount;
+        ViewBag.OwnedPageSize = ownedPageSize;
+
+        ViewBag.AccessibleCurrentPage = 1;
+        ViewBag.CurrentSort = "";
+
+        return View(vm);
+    }
+
     [HttpGet]
     [AllowAnonymous]
     public IActionResult BlockedUser()
@@ -183,9 +222,6 @@ public class AccountController : Controller
         return View();
     }
 
-    /// <summary>
-    /// Logout user
-    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize]
@@ -196,9 +232,6 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Home");
     }
 
-    /// <summary>
-    /// Logout confirmation GET (for links)
-    /// </summary>
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> LogoutConfirm()

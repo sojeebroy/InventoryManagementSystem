@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
 namespace Inventory_Management_System.Services.Interfaces;
@@ -99,15 +99,12 @@ public class InventoryService : IInventoryService
         if (inventory == null)
             return false;
 
-        // Owner has full access
         if (inventory.OwnerId == userId)
             return true;
 
-        // Public inventories allow viewing
         if (inventory.Visibility == VisibilityType.Public && requiredLevel == AccessLevel.View)
             return true;
 
-        // Check specific access grant
         var access = inventory.AccessControls.FirstOrDefault(ac => ac.UserId == userId);
         if (access == null)
             return false;
@@ -152,3 +149,4 @@ public class InventoryService : IInventoryService
         }
     }
 }
+

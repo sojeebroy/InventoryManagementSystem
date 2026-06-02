@@ -1,4 +1,4 @@
-namespace Inventory_Management_System.Models.DTOs;
+﻿namespace Inventory_Management_System.Models.DTOs;
 
 public class CreateInventoryDto
 {
@@ -9,7 +9,6 @@ public class CreateInventoryDto
     public string TagsInput { get; set; } = string.Empty;
     public IFormFile? ImageFile { get; set; }
 
-    // Helper property to parse tags from comma-separated string
     public List<string> Tags
     {
         get => string.IsNullOrWhiteSpace(TagsInput)
@@ -33,7 +32,6 @@ public class UpdateInventoryDto
     public IFormFile? ImageFile { get; set; }
     public int Version { get; set; }
 
-    // Helper property to parse tags from comma-separated string
     public List<string> Tags
     {
         get => string.IsNullOrWhiteSpace(TagsInput)
@@ -109,4 +107,5 @@ public class FieldReorderDto
     public int Id { get; set; }
     public int Order { get; set; }
 }
+
 

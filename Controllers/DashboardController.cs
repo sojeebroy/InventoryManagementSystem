@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Inventory_Management_System.Models;
@@ -28,15 +28,12 @@ public class DashboardController : Controller
         var ownedInventories = await _inventoryService.GetOwnedInventoriesAsync(userId);
         var accessibleInventories = await _inventoryService.GetAccessibleInventoriesAsync(userId);
 
-        // Remove owned inventories from accessible list
         var ownedIds = ownedInventories.Select(i => i.Id).ToHashSet();
         var otherAccessible = accessibleInventories.Where(i => !ownedIds.Contains(i.Id)).ToList();
 
-        // Apply sorting
         ownedInventories = ApplySorting(ownedInventories, sortBy);
         otherAccessible = ApplySorting(otherAccessible, sortBy);
 
-        // Calculate pagination for owned inventories
         var ownedTotalCount = ownedInventories.Count;
         var ownedTotalPages = (int)Math.Ceiling(ownedTotalCount / (double)pageSize);
         var ownedPaginatedList = ownedInventories
@@ -44,7 +41,6 @@ public class DashboardController : Controller
             .Take(pageSize)
             .ToList();
 
-        // Calculate pagination for accessible inventories
         var accessibleTotalCount = otherAccessible.Count;
         var accessibleTotalPages = (int)Math.Ceiling(accessibleTotalCount / (double)pageSize);
         var accessiblePaginatedList = otherAccessible
@@ -81,3 +77,4 @@ public class DashboardController : Controller
         };
     }
 }
+

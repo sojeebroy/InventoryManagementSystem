@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Inventory_Management_System.Models;
@@ -166,8 +166,7 @@ public class InventoriesController : Controller
         return RedirectToAction(nameof(Details), new { id = created.Id });
     }
 
-
-    public async Task<IActionResult> Edit(int id)
+public async Task<IActionResult> Edit(int id)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId) || !await _authService.CanEditInventoryAsync(id, userId))
@@ -275,7 +274,7 @@ public class InventoriesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    public async Task<IActionResult> Items(int id, int page = 1)
+    public async Task<IActionResult> Items(int id, int page = 1, string search = "")
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         var inventory = await _inventoryService.GetInventoryByIdAsync(id);
@@ -291,8 +290,24 @@ public class InventoriesController : Controller
             return Forbid();
         }
 
-        var items = await _itemService.GetInventoryItemsAsync(id, page, pageSize: 5);
-        var totalItems = await _itemService.GetInventoryItemsCountAsync(id);
+        List<Item> items;
+        int totalItems;
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.Trim();
+            var searchResults = await _itemService.SearchItemsAsync(search, id);
+            totalItems = searchResults.Count;
+            items = searchResults
+                .Skip((page - 1) * 5)
+                .Take(5)
+                .ToList();
+        }
+        else
+        {
+            items = await _itemService.GetInventoryItemsAsync(id, page, pageSize: 5);
+            totalItems = await _itemService.GetInventoryItemsCountAsync(id);
+        }
 
         ViewBag.Inventory = inventory;
         ViewBag.CanEdit = !string.IsNullOrEmpty(userId) &&
@@ -301,6 +316,7 @@ public class InventoriesController : Controller
         ViewBag.TotalPages = (int)Math.Ceiling(totalItems / 5.0);
         ViewBag.CurrentPage = page;
         ViewBag.TotalItems = totalItems;
+        ViewBag.SearchTerm = search;
 
         return View("Items", items);
     }
@@ -346,7 +362,6 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
-        // Private inventories: only owner, admin, or explicitly shared users may view
         bool isOwner = inventory.OwnerId == userId;
         bool hasAccess = inventory.AccessControls?.Any(ac => ac.UserId == userId) == true;
         bool isPublic = inventory.Visibility == VisibilityType.Public;
@@ -354,10 +369,8 @@ public class InventoriesController : Controller
         if (!isPublic && !isOwner && !isAdmin && !hasAccess)
             return Forbid();
 
-        // Any authenticated user may post
         bool canAdd = currentUser != null;
 
-        // Pagination — clamp page to valid range
         const int pageSize = 5;
         page = Math.Max(1, page);
         var totalDiscussions = await _discussionService.GetInventoryDiscussionsCountAsync(id);
@@ -397,7 +410,6 @@ public class InventoriesController : Controller
         if (!isPublic && !isOwner && !isAdmin && !hasAccess)
             return Forbid();
 
-        // Any authenticated user may post
         bool canAdd = currentUser != null;
 
         const int pageSize = 5;
@@ -437,9 +449,7 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
-        // Any authenticated user may post — no extra access check needed
-
-        if (string.IsNullOrWhiteSpace(content))
+if (string.IsNullOrWhiteSpace(content))
         {
             TempData["DiscussionError"] = "Comment cannot be empty.";
             return RedirectToAction("Discussion", new { id = inventoryId });
@@ -463,7 +473,6 @@ public class InventoriesController : Controller
         await _discussionService.AddDiscussionAsync(discussion);
         TempData["DiscussionSuccess"] = "Your comment was posted successfully!";
 
-        // Redirect to page 1 — discussions are ordered descending so newest appears first
         return RedirectToAction("Discussion", new { id = inventoryId, page = 1 });
     }
 
@@ -482,14 +491,12 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
-        // Fetch the specific discussion from DB
         var allOnPage = await _discussionService.GetInventoryDiscussionsAsync(inventoryId, 1, int.MaxValue);
         var discussion = allOnPage.FirstOrDefault(d => d.Id == id);
 
         if (discussion == null)
             return NotFound();
 
-        // Only the post author or admin may delete
         if (discussion.UserId != userId && !isAdmin)
         {
             TempData["DiscussionError"] = "You don't have permission to delete this post.";
@@ -499,7 +506,6 @@ public class InventoriesController : Controller
         await _discussionService.DeleteDiscussionAsync(id);
         TempData["DiscussionSuccess"] = "Comment deleted.";
 
-        // Recalculate page count after deletion so we never land on a ghost page
         const int pageSize = 5;
         var total = await _discussionService.GetInventoryDiscussionsCountAsync(inventoryId);
         var maxPage = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
@@ -538,10 +544,10 @@ public class InventoriesController : Controller
         }
 
         var stats = await _statisticsService.GetInventoryStatisticsAsync(id);
-        var discussions = await _discussionService.GetInventoryDiscussionsAsync(id);
+        var totalDiscussions = await _discussionService.GetInventoryDiscussionsCountAsync(id);
 
         ViewBag.Inventory = inventory;
-        ViewBag.TotalDiscussions = discussions.Count;
+        ViewBag.TotalDiscussions = totalDiscussions;
 
         return View("Statistics", stats);
     }
@@ -563,15 +569,14 @@ public class InventoriesController : Controller
         }
 
         var stats = await _statisticsService.GetInventoryStatisticsAsync(id);
-        var discussions = await _discussionService.GetInventoryDiscussionsAsync(id);
+        var totalDiscussions = await _discussionService.GetInventoryDiscussionsCountAsync(id);
 
         ViewBag.Inventory = inventory;
-        ViewBag.TotalDiscussions = discussions.Count;
+        ViewBag.TotalDiscussions = totalDiscussions;
 
         return PartialView("_Statistics", stats);
     }
 
-    // ===== Custom ID Format Settings =====
     [HttpPost]
     [Route("/Inventories/SaveCustomIdFormat")]
     [ValidateAntiForgeryToken]
@@ -585,13 +590,11 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
-        // Validate the JSON payload
         if (format.ValueKind == JsonValueKind.Null || format.ValueKind == JsonValueKind.Undefined)
         {
             return BadRequest(new { success = false, error = "Format cannot be empty" });
         }
 
-        // Try to parse as array
         if (format.ValueKind != JsonValueKind.Array)
         {
             return BadRequest(new { success = false, error = "Format must be an array" });
@@ -605,21 +608,19 @@ public class InventoriesController : Controller
             return BadRequest(new { success = false, error = "Format cannot be empty" });
         }
 
-        // Convert JSON to List<CustomIdElement>
         List<CustomIdElement> formatList = new();
 
         try
         {
             foreach (var item in array.EnumerateArray())
             {
-                if (!item.TryGetProperty("type", out var typeElement))
+                if (!item.TryGetProperty("type", out var typeElement) || typeElement.ValueKind != JsonValueKind.String)
                 {
-                    return BadRequest(new { success = false, error = "Each element must have a 'type' property" });
+                    return BadRequest(new { success = false, error = "Each element must have a 'type' property (string)" });
                 }
 
                 string typeStr = typeElement.GetString() ?? "";
 
-                // Convert string type to enum
                 if (!Enum.TryParse<CustomIdElementType>(typeStr, ignoreCase: true, out var typeEnum))
                 {
                     return BadRequest(new { success = false, error = $"Invalid type: {typeStr}" });
@@ -627,15 +628,48 @@ public class InventoriesController : Controller
 
                 var element = new CustomIdElement { Type = typeEnum };
 
-                // Parse optional properties
+                if (item.TryGetProperty("text", out var textElement) && textElement.ValueKind == JsonValueKind.String)
+                {
+                    element.Text = textElement.GetString();
+                    if (string.IsNullOrEmpty(element.Value))
+                        element.Value = element.Text;
+                }
+
                 if (item.TryGetProperty("value", out var valueElement) && valueElement.ValueKind == JsonValueKind.String)
                 {
-                    element.Value = valueElement.GetString() ?? "";
+                    element.Value = valueElement.GetString();
+                    if (string.IsNullOrEmpty(element.Text))
+                        element.Text = element.Value;
                 }
 
                 if (item.TryGetProperty("length", out var lengthElement) && lengthElement.ValueKind == JsonValueKind.Number)
                 {
                     element.Length = lengthElement.GetInt32();
+                }
+
+                if (item.TryGetProperty("start", out var startElement) && startElement.ValueKind == JsonValueKind.Number)
+                {
+                    element.Start = startElement.GetInt32();
+                }
+
+                if (item.TryGetProperty("pad", out var padElement) && padElement.ValueKind == JsonValueKind.Number)
+                {
+                    element.Padding = padElement.GetInt32();
+                }
+
+                if (item.TryGetProperty("padding", out var paddingElement) && paddingElement.ValueKind == JsonValueKind.Number)
+                {
+                    element.Padding = element.Padding ?? paddingElement.GetInt32();
+                }
+
+                if (item.TryGetProperty("property", out var propElement) && propElement.ValueKind == JsonValueKind.String)
+                {
+                    element.Property = propElement.GetString() ?? "";
+                }
+
+                if (item.TryGetProperty("prefix", out var prefixElement) && prefixElement.ValueKind == JsonValueKind.String)
+                {
+                    element.Prefix = prefixElement.GetString() ?? "";
                 }
 
                 formatList.Add(element);
@@ -647,13 +681,11 @@ public class InventoriesController : Controller
             return BadRequest(new { success = false, error = $"Invalid format data: {ex.Message}" });
         }
 
-        // Save to database
         inventory.CustomIdFormat = JsonSerializer.Serialize(formatList);
         inventory.UpdatedAt = DateTime.UtcNow;
 
         await _inventoryService.UpdateInventoryAsync(inventory);
 
-        // Generate preview
         var preview = formatList.Aggregate(new System.Text.StringBuilder(), (sb, el) => sb.Append(el.GetPreview())).ToString();
 
         return Json(new { success = true, preview = preview });
@@ -670,7 +702,6 @@ public class InventoriesController : Controller
         return Ok(new { hasCustomIdFormat = hasFormat });
     }
 
-    // ===== Custom Fields Management =====
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> GetCustomFields(int id)
@@ -684,29 +715,68 @@ public class InventoriesController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreateCustomField(int inventoryId, [FromBody] CustomField field)
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> CreateCustomField(int inventoryId, [FromBody] JsonElement payload)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId) || !await _authService.CanEditInventoryAsync(inventoryId, userId))
             return Forbid();
 
-        field.InventoryId = inventoryId;
+        if (payload.ValueKind == JsonValueKind.Null || payload.ValueKind == JsonValueKind.Undefined)
+            return Json(new { success = false, error = "Field payload is required" });
 
         try
         {
+            string title = payload.TryGetProperty("title", out var titleEl) ? titleEl.GetString() ?? "" : "";
+            string? description = payload.TryGetProperty("description", out var descEl) ? descEl.GetString() : null;
+            string fieldTypeStr = payload.TryGetProperty("fieldType", out var typeEl) ? typeEl.GetString() ?? "SingleLineText" : "SingleLineText";
+            bool isVisibleInTable = payload.TryGetProperty("isVisibleInTable", out var visEl) ? visEl.GetBoolean() : true;
+
+            if (string.IsNullOrWhiteSpace(title))
+                return Json(new { success = false, error = "Title is required" });
+
+            if (!Enum.TryParse<CustomFieldType>(fieldTypeStr, ignoreCase: true, out var fieldType))
+                return Json(new { success = false, error = $"Invalid fieldType: {fieldTypeStr}" });
+
+            var field = new CustomField
+            {
+                InventoryId = inventoryId,
+                Title = title,
+                Description = description,
+                FieldType = fieldType,
+                IsVisibleInTable = isVisibleInTable,
+                DisplayOrder = 0
+            };
+
             var created = await _customFieldService.CreateCustomFieldAsync(field);
-            return Json(new { success = true, field = created });
+            return Json(new
+            {
+                success = true,
+                field = new
+                {
+                    id = created.Id,
+                    title = created.Title,
+                    description = created.Description,
+                    fieldType = created.FieldType.ToString(),
+                    isVisibleInTable = created.IsVisibleInTable,
+                    displayOrder = created.DisplayOrder
+                }
+            });
         }
         catch (InvalidOperationException ex)
         {
             return Json(new { success = false, error = ex.Message });
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[CreateCustomField] Error: {ex}");
+            return Json(new { success = false, error = $"Error: {ex.Message}" });
+        }
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateCustomField(int id, [FromBody] CustomField field)
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> UpdateCustomField(int id, [FromBody] JsonElement payload)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
@@ -719,17 +789,28 @@ public class InventoriesController : Controller
         if (!await _authService.CanEditInventoryAsync(existing.InventoryId, userId))
             return Forbid();
 
-        field.Id = id;
-        field.InventoryId = existing.InventoryId;
-        field.FieldName = existing.FieldName;
-        field.FieldType = existing.FieldType;
+        existing.Title = payload.TryGetProperty("title", out var titleEl) ? titleEl.GetString() ?? existing.Title : existing.Title;
+        existing.Description = payload.TryGetProperty("description", out var descEl) ? descEl.GetString() : existing.Description;
+        existing.IsVisibleInTable = payload.TryGetProperty("isVisibleInTable", out var visEl) ? visEl.GetBoolean() : existing.IsVisibleInTable;
 
-        var updated = await _customFieldService.UpdateCustomFieldAsync(field);
-        return Json(new { success = true, field = updated });
+        var updated = await _customFieldService.UpdateCustomFieldAsync(existing);
+        return Json(new
+        {
+            success = true,
+            field = new
+            {
+                id = updated.Id,
+                title = updated.Title,
+                description = updated.Description,
+                fieldType = updated.FieldType.ToString(),
+                isVisibleInTable = updated.IsVisibleInTable,
+                displayOrder = updated.DisplayOrder
+            }
+        });
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> DeleteCustomField(int id)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -748,7 +829,7 @@ public class InventoriesController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> ReorderCustomFields(int inventoryId, [FromBody] List<FieldReorderDto> order)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -759,7 +840,6 @@ public class InventoriesController : Controller
         return Json(new { success = true });
     }
 
-    // ===== Discussion Real-time Updates =====
     [AllowAnonymous]
     [HttpPost]
     public async Task<IActionResult> GetDiscussionsSince(int inventoryId, [FromBody] DateTime since)
@@ -770,7 +850,6 @@ public class InventoriesController : Controller
         if (inventory == null)
             return NotFound();
 
-        // Check visibility
         bool isPublic = inventory.Visibility == VisibilityType.Public;
         if (!isPublic && (string.IsNullOrEmpty(userId) ||
             (inventory.OwnerId != userId &&
@@ -782,4 +861,30 @@ public class InventoriesController : Controller
         var newDiscussions = await _discussionService.GetInventoryDiscussionsSinceAsync(inventoryId, since);
         return Json(newDiscussions);
     }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetVisibility(int id, VisibilityType visibility)
+    {
+        var inventory = await _inventoryService.GetInventoryByIdForUpdateAsync(id);
+        if (inventory == null)
+            return NotFound();
+
+        if (inventory.Visibility == visibility)
+            return Json(new { success = true, message = "No change" });
+
+        inventory.Visibility = visibility;
+        inventory.UpdatedAt = DateTime.UtcNow;
+
+        try
+        {
+            await _inventoryService.UpdateInventoryAsync(inventory);
+            return Json(new { success = true });
+        }
+        catch
+        {
+            return Json(new { success = false, message = "Error saving visibility" });
+        }
+    }
 }
+

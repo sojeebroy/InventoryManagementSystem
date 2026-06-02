@@ -1,4 +1,4 @@
-@using Inventory_Management_System.Models.DTOs
+﻿@using Inventory_Management_System.Models.DTOs
 @model UpdateInventoryDto
 @{
     ViewData["Title"] = "Edit - " + Model.Title;
@@ -103,10 +103,10 @@
                 };
                 reader.readAsDataURL(file);
             } else {
-                // Reset to original database image
                 imagePreview.src = initialImageUrl;
                 imagePreview.style.display = initialImageUrl ? 'block' : 'none';
             }
         });
     });
 </script>
+

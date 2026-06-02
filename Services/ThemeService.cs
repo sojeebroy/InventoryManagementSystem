@@ -1,14 +1,10 @@
-using Inventory_Management_System.Data;
+﻿using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory_Management_System.Services;
 
-/// <summary>
-/// Service for managing user theme preferences.
-/// Persists theme settings to database and ensures consistency across sessions.
-/// </summary>
 public class ThemeService : IThemeService
 {
     private readonly ApplicationDbContext _context;
@@ -20,10 +16,6 @@ public class ThemeService : IThemeService
         _logger = logger;
     }
 
-    /// <summary>
-    /// Gets the current theme for a user.
-    /// Creates a default UserPreference if it doesn't exist.
-    /// </summary>
     public async Task<string> GetThemeAsync(string userId)
     {
         if (string.IsNullOrWhiteSpace(userId))
@@ -35,12 +27,10 @@ public class ThemeService : IThemeService
 
             if (preference == null)
             {
-                // Create default preference if none exists
                 preference = new UserPreference
                 {
                     UserId = userId,
                     Theme = "light",
-                    Language = "en",
                     UseSystemTheme = false,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -56,19 +46,15 @@ public class ThemeService : IThemeService
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Error getting theme for user {userId}");
-            return "light"; // Default to light theme on error
+            return "light";
         }
     }
 
-    /// <summary>
-    /// Sets the user's theme preference to "light" or "dark".
-    /// </summary>
     public async Task<bool> SetThemeAsync(string userId, string theme)
     {
         if (string.IsNullOrWhiteSpace(userId))
             return false;
 
-        // Validate theme value
         if (theme != "light" && theme != "dark")
         {
             _logger.LogWarning($"Invalid theme value: {theme}");
@@ -85,7 +71,6 @@ public class ThemeService : IThemeService
                 {
                     UserId = userId,
                     Theme = theme,
-                    Language = "en",
                     UpdatedAt = DateTime.UtcNow
                 };
                 _context.UserPreferences.Add(preference);
@@ -108,9 +93,6 @@ public class ThemeService : IThemeService
         }
     }
 
-    /// <summary>
-    /// Toggles the user's theme between light and dark.
-    /// </summary>
     public async Task<string> ToggleThemeAsync(string userId)
     {
         if (string.IsNullOrWhiteSpace(userId))
@@ -131,9 +113,6 @@ public class ThemeService : IThemeService
         }
     }
 
-    /// <summary>
-    /// Gets whether user prefers system theme detection.
-    /// </summary>
     public async Task<bool> GetUseSystemThemeAsync(string userId)
     {
         if (string.IsNullOrWhiteSpace(userId))
@@ -151,9 +130,6 @@ public class ThemeService : IThemeService
         }
     }
 
-    /// <summary>
-    /// Sets whether user prefers system theme detection.
-    /// </summary>
     public async Task<bool> SetUseSystemThemeAsync(string userId, bool useSystemTheme)
     {
         if (string.IsNullOrWhiteSpace(userId))
@@ -170,7 +146,6 @@ public class ThemeService : IThemeService
                     UserId = userId,
                     UseSystemTheme = useSystemTheme,
                     Theme = "light",
-                    Language = "en",
                     UpdatedAt = DateTime.UtcNow
                 };
                 _context.UserPreferences.Add(preference);
@@ -193,3 +168,4 @@ public class ThemeService : IThemeService
         }
     }
 }
+

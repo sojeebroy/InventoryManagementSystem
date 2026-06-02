@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Inventory_Management_System.Data;
@@ -54,13 +54,11 @@ public class ItemsController : ControllerBase
         if (inventory == null)
             return NotFound("Inventory not found");
 
-        // Validate that CustomIdFormat is configured
         if (string.IsNullOrEmpty(inventory.CustomIdFormat))
         {
             return BadRequest(new { error = "CustomIdFormat not configured. Please set a Custom ID Format in Settings before creating items." });
         }
 
-        // Generate custom ID based on configured format
         List<CustomIdElement> format = JsonSerializer.Deserialize<List<CustomIdElement>>(inventory.CustomIdFormat) ?? new();
 
         if (format.Count == 0)
@@ -93,7 +91,7 @@ public class ItemsController : ControllerBase
         };
 
         await _itemService.CreateItemAsync(item);
-        return CreatedAtAction(nameof(GetItem), new { id = item.Id }, item);
+        return Ok(new { success = true, id = item.Id });
     }
 
     [HttpGet("{id}")]
@@ -104,7 +102,6 @@ public class ItemsController : ControllerBase
         if (item == null)
             return NotFound();
 
-        // Check access to inventory
         var canAccess = await _inventoryService.CanAccessInventoryAsync(item.InventoryId, 
             User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "");
 
@@ -213,7 +210,6 @@ public class ItemsController : ControllerBase
         if (item == null)
             return NotFound();
 
-        // Check if already liked
         var existingLike = _context.ItemLikes
             .FirstOrDefault(il => il.ItemId == itemId && il.UserId == userId);
 
@@ -253,3 +249,4 @@ public class ItemsController : ControllerBase
         return Ok(new { count = likeCount, isLiked = userLiked, userLiked = userLiked });
     }
 }
+

@@ -32,4 +32,8 @@
     <PackageReference Include="CloudinaryDotNet" Version="1.29.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
+
 </Project>

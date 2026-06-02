@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Dashboard";
     var ownedInventories = (List<Inventory>)ViewBag.OwnedInventories;
     var accessibleInventories = (List<Inventory>)ViewBag.AccessibleInventories;
@@ -37,9 +37,9 @@
                         <span id="ownedSelectedCount" style="font-weight: 600; color: #0d6efd;"></span>
                     </div>
                     <div class="btn-group gap-2" role="group">
-                        <a href="#" class="btn btn-sm btn-info" id="ownedViewBtn">👁️ View</a>
-                        <a href="#" class="btn btn-sm btn-secondary" id="ownedEditBtn">✏️ Edit</a>
-                        <a href="#" class="btn btn-sm btn-warning" id="ownedSettingsBtn">⚙️ Settings</a>
+                        <a href="#" class="btn btn-sm btn-info" id="ownedViewBtn">🔐 View</a>
+                        <a href="#" class="btn btn-sm btn-secondary" id="ownedEditBtn">œ Edit</a>
+                        <a href="#" class="btn btn-sm btn-warning" id="ownedSettingsBtn">š™ Settings</a>
                     </div>
                 </div>
             </div>
@@ -162,7 +162,7 @@
                         <span id="accessibleSelectedCount" style="font-weight: 600; color: #0d6efd;"></span>
                     </div>
                     <div class="btn-group gap-2" role="group">
-                        <a href="#" class="btn btn-sm btn-info" id="accessibleViewBtn">👁️ View</a>
+                        <a href="#" class="btn btn-sm btn-info" id="accessibleViewBtn">🔐 View</a>
                     </div>
                 </div>
             </div>
@@ -274,7 +274,6 @@
 </style>
 
 <script>
-    // ===== OWNED INVENTORIES FUNCTIONS =====
     function updateOwnedToolbar() {
         const checkboxes = document.querySelectorAll('.owned-checkbox:checked');
         const toolbar = document.getElementById('ownedToolbar');
@@ -307,7 +306,6 @@
         checkbox.checked = false;
     }
 
-    // Handle owned checkbox changes - only allow single selection
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('owned-checkbox')) {
             if (e.target.checked) {
@@ -322,7 +320,6 @@
         }
     });
 
-    // ===== ACCESSIBLE INVENTORIES FUNCTIONS =====
     function updateAccessibleToolbar() {
         const checkboxes = document.querySelectorAll('.accessible-checkbox:checked');
         const toolbar = document.getElementById('accessibleToolbar');
@@ -347,7 +344,6 @@
         viewBtn.href = `/Inventories/Details/${inventoryId}`;
     }
 
-    // Handle accessible checkbox changes - only allow single selection
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('accessible-checkbox')) {
             if (e.target.checked) {
@@ -362,3 +358,6 @@
         }
     });
 </script>
+
+
+

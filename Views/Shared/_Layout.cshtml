@@ -32,6 +32,9 @@
                         <button class="btn btn-outline-primary" type="submit">Search</button>
                     </form>
                     <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            @await Html.PartialAsync("_ThemeSwitcher")
+                        </li>
                         @if (User.Identity?.IsAuthenticated ?? false)
                         {
                             <li class="nav-item">
@@ -53,7 +56,7 @@
                                     👤 @User.Identity?.Name
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                                    <li><a class="dropdown-item" href="/Identity/Account/Manage">Settings</a></li>
+                                    <li><a class="dropdown-item" href="/Account/Profile/">Profile</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form action="/Account/Logout" method="post" style="display:inline;">
@@ -91,7 +94,9 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/simple-theme-manager.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
     <script src="/_framework/aspnetcore-browser-refresh.js"></script>
 </body>
 </html>
+

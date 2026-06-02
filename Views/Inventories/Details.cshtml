@@ -1,6 +1,6 @@
-@model Inventory
+﻿@model Inventory
 @{
-    ViewData["Title"] = Model.Title; // [cite: 66]
+    ViewData["Title"] = Model.Title;
 }
 
 <div class="container-main">
@@ -15,19 +15,17 @@
         <div class="col-md-4 text-end">
             @* [cite: 67] *@
             <a href="/Home/Index" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Home</a>  @* [cite: 67] *@
-            @if (ViewBag.CanEdit) // [cite: 67]
+            @if (ViewBag.CanEdit)
             {
                 <a href="/Inventories/Edit/@Model.Id" class="btn btn-primary">Edit</a>
-                // [cite: 67]
                 <a href="/Inventories/Settings/@Model.Id" class="btn btn-warning">Settings</a>
-                // [cite: 67, 68]
             }
         </div>
     </div>
 
     <div class="row">
         <div class="col-md-8 mb-4">
-            @if (!string.IsNullOrEmpty(Model.ImageUrl)) // [cite: 68]
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
             {
                 <div class="row mb-4">
                     <div class="col-md-12">
@@ -48,24 +46,21 @@
 
                         <dt class="col-sm-4">Visibility:</dt> @* [cite: 72] *@
                         <dd class="col-sm-8">
-                            @if (Model.Visibility == Inventory_Management_System.Models.VisibilityType.Public) // [cite: 72]
+                            @if (Model.Visibility == Inventory_Management_System.Models.VisibilityType.Public)
                             {
                                 <span class="badge bg-success">Public</span>
-                                // [cite: 73]
                             }
                             else
                             {
                                 <span class="badge bg-warning">Private</span>
-                                // [cite: 74]
                             }
                         </dd> @* [cite: 75] *@
 
                         <dt class="col-sm-4">Tags:</dt>
                         <dd class="col-sm-8">
-                            @foreach (var tag in Model.Tags) // [cite: 75]
+                            @foreach (var tag in Model.Tags)
                             {
                                 <span class="badge bg-info">@tag.Tag</span>
-                                // [cite: 76]
                             }
                         </dd>
                     </dl> @* [cite: 77] *@
@@ -149,3 +144,4 @@
         });
     </script>
 }
+

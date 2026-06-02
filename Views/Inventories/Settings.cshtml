@@ -1,4 +1,4 @@
-@model Inventory
+﻿@model Inventory
 @{
     ViewData["Title"] = "Settings - " + Model.Title;
 }
@@ -108,40 +108,7 @@
                                         <i class="bi bi-lock"></i> Private
                                     </label>
                                 </div>
-                            </div>
-
-                            @if (Model.Visibility == VisibilityType.Private)
-                            {
-                                <div class="mb-4">
-                                    <label class="form-label fw-500" for="userSearchInput">Grant Access To</label>
-                                    <div class="input-group">
-                                        <input type="text" id="userSearchInput" class="form-control" placeholder="Search user by name or email...">
-                                        <button type="button" class="btn btn-outline-secondary" id="grantAccessBtn">Grant</button>
-                                    </div>
-                                    <small class="text-muted d-block mt-2">Start typing to search for users</small>
-                                </div>
-
-                                <div id="accessList">
-                                    <h6 class="mb-3">Current Access</h6>
-                                    <ul class="list-group">
-                                        @foreach (var access in Model.AccessControls)
-                                        {
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <span class="fw-500">@access.User?.UserName</span>
-                                                    <br>
-                                                    <small class="text-muted">@access.User?.Email</small>
-                                                </div>
-                                                <div>
-                                                    <span class="badge bg-info">@access.AccessLevel</span>
-                                                </div>
-                                            </li>
-                                        }
-                                    </ul>
-                                </div>
-                            }
-
-                            <button type="button" class="btn btn-primary mt-4" id="saveAccessBtn">Save Changes</button>
+                            </div>                           
                         </div>
                     </div>
                 </div>
@@ -193,12 +160,12 @@
     </div>
 </div>
 
-
 @section Scripts {
     <script src="~/js/Settings.js" asp-append-version="true"></script>
+    <script src="~/js/fields.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            initSettingsPage({
+            initInventorySettings({
                 inventoryId: '@Model.Id',
                 canEdit: '@(ViewBag.CanEdit ?? false)',
                 userId: '@ViewBag.UserId'
@@ -206,3 +173,5 @@
         });
     </script>
 }
+
+

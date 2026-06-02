@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Inventory_Management_System.Data;
@@ -64,7 +64,6 @@ public class DiscussionsController : ControllerBase
         if (inventory == null)
             return NotFound("Inventory not found");
 
-        // Check access
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (inventory.Visibility == VisibilityType.Private && 
             (string.IsNullOrEmpty(userId) || 
@@ -89,7 +88,6 @@ public class DiscussionsController : ControllerBase
         if (discussion == null)
             return NotFound();
 
-        // Only creator or inventory owner can delete
         if (discussion.UserId != userId)
         {
             var inventory = await _inventoryService.GetInventoryByIdAsync(discussion.InventoryId);
@@ -101,3 +99,4 @@ public class DiscussionsController : ControllerBase
         return NoContent();
     }
 }
+

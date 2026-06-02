@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Inventory_Management_System.Data;
@@ -104,7 +104,6 @@ public class CustomIdService : ICustomIdService
         if (string.IsNullOrEmpty(customId))
             return null;
 
-        // Try to parse the last digits as sequence
         var digits = new string(customId.Reverse().TakeWhile(char.IsDigit).Reverse().ToArray());
         return int.TryParse(digits, out var seq) ? seq : null;
     }
@@ -118,47 +117,79 @@ public class CustomIdElement
     [JsonPropertyName("value")]
     public string? Value { get; set; }
 
+    [JsonPropertyName("text")]
+    public string? Text { get; set; }
+
     [JsonPropertyName("length")]
     public int? Length { get; set; }
 
     [JsonPropertyName("padding")]
     public int? Padding { get; set; }
 
+    [JsonPropertyName("start")]
+    public int? Start { get; set; }
+
+    [JsonPropertyName("pad")]
+    public int? Pad { get; set; }
+
+    [JsonPropertyName("property")]
+    public string? Property { get; set; }
+
+    [JsonPropertyName("prefix")]
+    public string? Prefix { get; set; }
+
     public int GetMinLength() => Type switch
     {
         CustomIdElementType.FixedText => Value?.Length ?? 0,
-        CustomIdElementType.RandomNumbers20Bit => 5,  // 5 hex digits
-        CustomIdElementType.RandomNumbers32Bit => 8,  // 8 hex digits
-        CustomIdElementType.RandomNumbers6Digit => 6, // 6 decimal digits
-        CustomIdElementType.RandomNumbers9Digit => 9, // 9 decimal digits
+        CustomIdElementType.Static => Text?.Length ?? 0,
+        CustomIdElementType.RandomNumbers20Bit => 5,
+        CustomIdElementType.RandomNumbers32Bit => 8,
+        CustomIdElementType.RandomNumbers6Digit => 6,
+        CustomIdElementType.RandomNumbers9Digit => 9,
+        CustomIdElementType.RandomAlphaNum => Length ?? 6,
         CustomIdElementType.Guid => Length ?? 36,
         CustomIdElementType.DateTime => Value?.Length ?? 8,
+        CustomIdElementType.Sequential => Pad ?? 3,
         CustomIdElementType.SequenceNumber => Length ?? 3,
+        CustomIdElementType.Year => 4,
+        CustomIdElementType.InventoryProperty => 5,
         _ => 0
     };
 
     public string GetPreview() => Type switch
     {
         CustomIdElementType.FixedText => Value ?? "[TEXT]",
-        CustomIdElementType.RandomNumbers20Bit => "A7E3A",           // 5-char hex (X5 format)
-        CustomIdElementType.RandomNumbers32Bit => "E74FA329",        // 8-char hex (X8 format)
-        CustomIdElementType.RandomNumbers6Digit => "013245",         // 6-digit decimal (D6)
-        CustomIdElementType.RandomNumbers9Digit => "001234567",      // 9-digit decimal (D9)
+        CustomIdElementType.Static => (Prefix ?? "") + (Text ?? "[TEXT]"),
+        CustomIdElementType.RandomNumbers20Bit => "A7E3A",
+        CustomIdElementType.RandomNumbers32Bit => "E74FA329",
+        CustomIdElementType.RandomNumbers6Digit => "013245",
+        CustomIdElementType.RandomNumbers9Digit => "001234567",
+        CustomIdElementType.RandomAlphaNum => (Prefix ?? "") + new string('X', Length ?? 6),
         CustomIdElementType.Guid => Guid.NewGuid().ToString().Substring(0, Math.Min(Length ?? 36, 36)),
         CustomIdElementType.DateTime => DateTime.UtcNow.ToString(Value ?? "yyyyMMdd"),
-        CustomIdElementType.SequenceNumber => "001",                 // Default D3 format
+        CustomIdElementType.Sequential => (Prefix ?? "") + (Start ?? 1).ToString().PadLeft(Pad ?? 0, '0'),
+        CustomIdElementType.SequenceNumber => "001",
+        CustomIdElementType.Year => (Prefix ?? "") + DateTime.UtcNow.Year,
+        CustomIdElementType.InventoryProperty => (Prefix ?? "") + (Property ?? ""),
         _ => "[?]"
     };
 }
 
 public enum CustomIdElementType
 {
-    FixedText,
-    RandomNumbers20Bit,
-    RandomNumbers32Bit,
-    RandomNumbers6Digit,
-    RandomNumbers9Digit,
-    Guid,
-    DateTime,
-    SequenceNumber
+    FixedText = 0,
+    RandomNumbers20Bit = 1,
+    RandomNumbers32Bit = 2,
+    RandomNumbers6Digit = 3,
+    RandomNumbers9Digit = 4,
+    Guid = 5,
+    DateTime = 6,
+    SequenceNumber = 7,
+
+    Static = 8,
+    RandomAlphaNum = 9,
+    Sequential = 10,
+    Year = 11,
+    InventoryProperty = 12
 }
+

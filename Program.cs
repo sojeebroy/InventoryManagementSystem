@@ -1,4 +1,4 @@
-using CloudinaryDotNet;
+﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using dotenv.net;
 using Inventory_Management_System.Data;
@@ -7,20 +7,18 @@ using Inventory_Management_System.Models;
 using Inventory_Management_System.Services;
 using Inventory_Management_System.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
-
-
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// Add Identity with OAuth support
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -33,14 +31,12 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-// Configure cookie policies for SameSite security
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
-// Add OAuth Authentication
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
     {
@@ -73,7 +69,6 @@ DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
 Cloudinary cloudinary = new Cloudinary(Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
 cloudinary.Api.Secure = true;
 
-// Add services
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IInventoryAuthorizationService, InventoryAuthorizationService>();
@@ -94,10 +89,15 @@ builder.Services.AddScoped<ICloudinaryService>(provider =>
     }
 });
 
+builder.Services.AddScoped<CustomFieldMappingService>();
+builder.Services.AddScoped<FieldMappingReportService>();
 
-
-// Add controllers and views
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        options.JsonSerializerOptions.PropertyNamingPolicy = null; 
+    });
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
@@ -124,7 +124,6 @@ app.MapControllerRoute(
 
 app.MapRazorPages();
 
-
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -141,3 +140,4 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+

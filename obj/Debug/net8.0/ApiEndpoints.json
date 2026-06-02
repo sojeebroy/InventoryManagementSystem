@@ -147,5 +147,41 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Inventory_Management_System.Controllers.UserController",
+    "Method": "GetTheme",
+    "RelativePath": "api/User/theme",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Inventory_Management_System.Controllers.UserController",
+    "Method": "SetTheme",
+    "RelativePath": "api/User/theme",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Inventory_Management_System.Controllers.SetThemeRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Inventory_Management_System.Controllers.UserController",
+    "Method": "ToggleTheme",
+    "RelativePath": "api/User/theme/toggle",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
   }
 ]

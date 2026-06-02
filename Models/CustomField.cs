@@ -1,4 +1,4 @@
-namespace Inventory_Management_System.Models;
+﻿namespace Inventory_Management_System.Models;
 
 public class CustomField
 {
@@ -9,7 +9,7 @@ public class CustomField
     public CustomFieldType FieldType { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsVisibleInTable { get; set; } = true;
-    public string? FieldName { get; set; } // Maps to custom_string1_value, custom_number1_value, etc.
+    public string? FieldName { get; set; }
 
     public virtual Inventory? Inventory { get; set; }
 }
@@ -22,3 +22,4 @@ public enum CustomFieldType
     Boolean,
     Link
 }
+

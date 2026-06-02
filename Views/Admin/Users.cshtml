@@ -1,4 +1,4 @@
-@using Inventory_Management_System.Models.ViewModels
+﻿@using Inventory_Management_System.Models.ViewModels
 @model List<UserAdminViewModel>
 @{
     ViewData["Title"] = "User Management"; 
@@ -22,7 +22,7 @@
                            value="@ViewBag.SearchTerm">
                 </div>
                 <div class="col-md-4">
-                    <button type="submit" class="btn btn-primary w-100">🔍 Search</button>
+                    <button type="submit" class="btn btn-primary w-100">🔒 Search</button>
                 </div>
             </form>
         </div>
@@ -35,10 +35,10 @@
                 <span id="selectedCount" style="font-weight: 600; color: #0d6efd;"></span>
             </div>
             <div class="btn-group gap-2" role="group">
-                <a href="#" class="btn btn-sm btn-info" id="viewBtn">👁️ View</a>
+                <a href="#" class="btn btn-sm btn-info" id="viewBtn">🔒 View</a>
                 <button type="button" class="btn btn-sm btn-warning" id="blockBtn" onclick="handleBulkAction('block')">🔒 Block User</button>
-                <button type="button" class="btn btn-sm btn-info" id="adminBtn" onclick="handleBulkAction('admin')">⭐ Grant Admin</button>
-                <button type="button" class="btn btn-sm btn-danger" id="deleteBtn" onclick="handleBulkAction('delete')">🗑️ Delete</button>
+                <button type="button" class="btn btn-sm btn-info" id="adminBtn" onclick="handleBulkAction('admin')">⭐ Grant Admin</button>
+                <button type="button" class="btn btn-sm btn-danger" id="deleteBtn" onclick="handleBulkAction('delete')">🔒 Delete</button>
             </div>
         </div>
     </div>
@@ -100,7 +100,7 @@
                                     {
                                         @if (role == "Admin")
                                         {
-                                            <span class="badge bg-danger">⭐ @role</span>
+                                            <span class="badge bg-danger">⭐ @role</span>
                                         }
                                         else
                                         {
@@ -115,7 +115,7 @@
                                     }
                                     else
                                     {
-                                        <span class="badge bg-success">✓ Active</span>
+                                        <span class="badge bg-success">œ“ Active</span>
                                     }
                                 </td>
                                 <td>
@@ -234,7 +234,6 @@
     }
 
     function toggleSelectAll(checkbox) {
-        // For single selection, disable Select All functionality
         checkbox.checked = false;
     }
 
@@ -249,16 +248,13 @@
         const row = checkbox.closest('tr');
         const userId = checkbox.value;
 
-        // Update View button link
         viewBtn.href = `/Admin/Users/${userId}`;
 
-        // Check if user is blocked
         const isBlocked = row.querySelector('.badge.bg-warning') !== null;
-        blockBtn.textContent = isBlocked ? '🔓 Unblock User' : '🔒 Block User';
+        blockBtn.textContent = isBlocked ? '🔒 Unblock User' : '🔒 Block User';
 
-        // Check if user is admin
         const isAdmin = row.querySelector('.badge.bg-danger') !== null;
-        adminBtn.textContent = isAdmin ? '⬇️ Revoke Admin' : '⭐ Grant Admin';
+        adminBtn.textContent = isAdmin ? '¬‡ Revoke Admin' : '⭐ Grant Admin';
     }
 
     function handleBulkAction(action) {
@@ -306,13 +302,11 @@
         form.action = actionUrl;
         form.style.display = 'none';
 
-        // Add anti-forgery token from any existing form or meta tag
         let tokenValue = '';
         const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
         if (tokenElement) {
             tokenValue = tokenElement.value;
         } else {
-            // Try to get from meta tag if available
             const metaToken = document.querySelector('meta[name="__RequestVerificationToken"]');
             if (metaToken) {
                 tokenValue = metaToken.getAttribute('content');
@@ -329,10 +323,8 @@
 
         document.body.appendChild(form);
 
-        // Submit and clean up
         try {
             form.submit();
-            // Remove form after a delay
             setTimeout(() => {
                 if (form.parentNode) {
                     form.parentNode.removeChild(form);
@@ -344,11 +336,9 @@
         }
     }
 
-    // Handle checkbox changes - only allow single selection
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('user-checkbox')) {
             if (e.target.checked) {
-                // Uncheck all other checkboxes
                 const allCheckboxes = document.querySelectorAll('.user-checkbox');
                 allCheckboxes.forEach(cb => {
                     if (cb !== e.target) {
@@ -360,3 +350,8 @@
         }
     });
 </script>
+
+
+
+
+

@@ -1,4 +1,4 @@
-@using Inventory_Management_System.Models
+﻿@using Inventory_Management_System.Models
 @model List<Discussion>
 @{
     ViewData["Title"] = "Discussion - " + ((Inventory)ViewBag.Inventory).Title;
@@ -17,7 +17,7 @@
             <h1>Discussion: @inventory.Title</h1>
             <p class="text-muted">
                 <small>
-                    @totalDiscussions discussion@(totalDiscussions != 1 ? "s" : "") •
+                    @totalDiscussions discussion@(totalDiscussions != 1 ? "s" : "") ¢
                     @if (totalPages > 1)
                     {
                         <span>Page @currentPage of @totalPages</span>
@@ -40,7 +40,7 @@
     <div class="row">
         <div class="col-md-12">
 
-            <!-- ── Create / Add Discussion Section ─────────────────── -->
+            <!-- ”€”€ Create / Add Discussion Section ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€ -->
             @if (canAdd)
             {
                 <div class="card mb-4 border-primary">
@@ -122,7 +122,7 @@
                 </div>
             }
 
-            <!-- ── Discussion Feed ──────────────────────────────────── -->
+            <!-- ”€”€ Discussion Feed ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€ -->
             @if (Model.Any())
             {
                 <div class="discussion-posts">
@@ -157,10 +157,7 @@
                                             }
                                             @timeAgo
                                         </small>
-                                        @if (d.UpdatedAt > d.CreatedAt)
-                                        {
-                                            <small class="text-muted ms-2">(edited)</small>
-                                        }
+                                      
                                     </div>
 
                                     <!-- Delete button (server-side POST form, no JS required) -->
@@ -194,7 +191,7 @@
                     }
                 </div>
 
-                <!-- ── Pagination ──────────────────────────────────── -->
+                <!-- ”€”€ Pagination ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€ -->
                 @if (totalPages > 1)
                 {
                     <nav class="mt-4 mb-4" aria-label="Discussion pagination">
@@ -354,7 +351,6 @@
 
 @section Scripts {
     <script>
-        // Character counter — minimal JS, no behaviour change
         $(document).ready(function () {
             const textarea = $('#discussionContent');
 
@@ -364,7 +360,6 @@
                 $('#charCount').css('color', count > 4500 ? '#ff6b6b' : 'inherit');
             });
 
-            // HTML5 validation feedback
             const form = document.querySelector('.needs-validation');
             if (form) {
                 form.addEventListener('submit', function (event) {
@@ -378,3 +373,6 @@
         });
     </script>
 }
+
+
+

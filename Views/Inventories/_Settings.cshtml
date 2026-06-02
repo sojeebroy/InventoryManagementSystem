@@ -1,4 +1,4 @@
-@model Inventory
+﻿@model Inventory
 
 <div class="row mb-4">
     <div class="col">
@@ -43,7 +43,7 @@
 
                 <div class="mb-4 p-3 bg-light rounded">
                     <label class="text-muted small mb-2" style="display: block;">Example:</label>
-                    <code id="idPreview" style="font-size: 18px; font-weight: 500;">🎯-A7E3A_013_2025</code>
+                    <code id="idPreview" style="font-size: 18px; font-weight: 500;">🔐¯-A7E3A_013_2025</code>
                 </div>
 
                 <div id="idElementsContainer" class="mb-4">
@@ -254,7 +254,6 @@
         }
 
         try {
-            // In a real implementation, send to an API endpoint
             addFieldModal.hide();
             alert('Field will be added (API endpoint needed)');
         } catch (error) {
@@ -262,25 +261,23 @@
         }
     });
 
-    // Add Element for Custom ID
     document.getElementById('addElementBtn').addEventListener('click', () => {
         alert('Add ID element builder (implementation needed)');
     });
 
-    // Delete field
     document.querySelectorAll('.deleteFieldBtn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             if (confirm('Are you sure you want to delete this field?')) {
                 const fieldId = e.target.dataset.fieldId;
-                // Delete implementation
                 location.reload();
             }
         });
     });
 
-    // Save settings
     document.getElementById('saveAccessBtn').addEventListener('click', async () => {
         const visibility = document.getElementById('visibilityPublic').checked ? 'Public' : 'Private';
         alert('Access settings will be saved (API endpoint needed)');
     });
 </script>
+
+

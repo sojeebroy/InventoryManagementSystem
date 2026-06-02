@@ -1,4 +1,4 @@
-@model Inventory
+﻿@model Inventory
 
 <div class="card border-0 shadow-sm">
     <div class="card-body p-4">
@@ -94,15 +94,12 @@
 <script>
     const inventoryId = @Model.Id;
 
-    // Visibility toggle
     document.querySelectorAll('input[name="visibility"]').forEach(radio => {
         radio.addEventListener('change', () => {
-            // Reload to show/hide private controls
             location.reload();
         });
     });
 
-    // User search (mock implementation - would connect to API in real scenario)
     document.getElementById('userSearchInput')?.addEventListener('input', async (e) => {
         const query = e.target.value.trim();
         const resultsContainer = document.getElementById('userSearchResults');
@@ -113,8 +110,6 @@
         }
 
         try {
-            // This would typically call an API endpoint
-            // For now, show a placeholder
             resultsContainer.style.display = 'block';
             resultsContainer.innerHTML = '<div class="list-group-item text-muted small">User search API needed</div>';
         } catch (error) {
@@ -122,36 +117,31 @@
         }
     });
 
-    // Grant access
     document.getElementById('grantAccessBtn')?.addEventListener('click', () => {
         alert('Grant access functionality coming soon');
     });
 
-    // Remove access
     document.addEventListener('click', (e) => {
         if (e.target.closest('.removeAccessBtn')) {
             if (confirm('Remove access for this user?')) {
                 const accessId = e.target.closest('.removeAccessBtn').dataset.accessId;
-                // Remove implementation
                 e.target.closest('.list-group-item').remove();
             }
         }
     });
 
-    // Save changes
     document.getElementById('saveAccessBtn')?.addEventListener('click', async () => {
         const visibility = document.querySelector('input[name="visibility"]:checked')?.value;
 
         if (visibility === 'Public') {
-            // Update visibility
             console.log('Updating to public');
         } else {
             console.log('Keeping private');
         }
 
         alert('Access settings saved!');
-        // location.reload();
     });
 </script>
 
 <link rel="stylesheet" href="~/css/settings.css" />
+

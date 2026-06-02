@@ -1,4 +1,4 @@
-using Inventory_Management_System.Data;
+﻿using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +24,6 @@ public class HomeController : Controller
         {
             var viewModel = new HomePageViewModel();
 
-            // 1. Latest Inventories (limit to 10)
             viewModel.LatestInventories = await _context.Inventories
                 .Where(i => i.Visibility == VisibilityType.Public)
                 .Include(i => i.Owner)
@@ -44,7 +43,6 @@ public class HomeController : Controller
                 })
                 .ToListAsync();
 
-            // 2. Top-5 Most Popular Inventories (by item count)
             viewModel.TopPopularInventories = await _context.Inventories
                 .Where(i => i.Visibility == VisibilityType.Public)
                 .Include(i => i.Owner)
@@ -65,7 +63,6 @@ public class HomeController : Controller
                 })
                 .ToListAsync();
 
-            // 3. Tag Cloud (all tags with frequency)
             viewModel.TagCloud = await _context.InventoryTags
                 .Where(t => t.Inventory!.Visibility == VisibilityType.Public)
                 .GroupBy(t => t.Tag)
@@ -89,8 +86,7 @@ public class HomeController : Controller
         }
     }
 
-    
-    [HttpGet]
+[HttpGet]
     public async Task<IActionResult> Search(string query, int page = 1)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -101,7 +97,6 @@ public class HomeController : Controller
             const int pageSize = 20;
             var normalizedQuery = query.Trim().ToLower();
 
-            // Full-text search on Inventory Title, Description, and Tags
             var results = await _context.Inventories
                 .Where(i => i.Visibility == VisibilityType.Public &&
                     (EF.Functions.Like(i.Title, $"%{normalizedQuery}%") ||
@@ -112,7 +107,7 @@ public class HomeController : Controller
                 .Include(i => i.Items)
                 .OrderByDescending(i => i.CreatedAt)
                 .Skip((page - 1) * pageSize)
-                .Take(pageSize + 1) // Get one extra to determine if there's a next page
+                .Take(pageSize + 1)
                 .Select(i => new InventoryCardDto
                 {
                     Id = i.Id,
@@ -146,9 +141,6 @@ public class HomeController : Controller
         }
     }
 
-    /// <summary>
-    /// Filter by tag (clicking tag cloud)
-    /// </summary>
     [HttpGet]
     public async Task<IActionResult> FilterByTag(string tag, int page = 1)
     {
@@ -159,7 +151,6 @@ public class HomeController : Controller
         {
             const int pageSize = 20;
 
-            // Get distinct inventories with the tag
             var inventoryIds = await _context.InventoryTags
                 .Where(t => t.Tag.ToLower() == tag.ToLower() &&
                     t.Inventory!.Visibility == VisibilityType.Public)
@@ -207,10 +198,6 @@ public class HomeController : Controller
         }
     }
 
-    /// <summary>
-    /// <summary>
-    /// Calculate tag size based on frequency
-    /// </summary>
     private static string CalculateTagSize(int frequency)
     {
         return frequency switch
@@ -222,3 +209,5 @@ public class HomeController : Controller
         };
     }
 }
+
+

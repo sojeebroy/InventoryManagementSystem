@@ -1,4 +1,4 @@
-@using Inventory_Management_System.Models
+﻿@using Inventory_Management_System.Models
 @model List<Item>
 @{
     ViewData["Title"] = "Items";
@@ -18,13 +18,13 @@
 
     <div class="items-header">
         <div>
-            <h1>@inventory.Title — Items</h1>
-            <span class="items-meta">@totalItems item@(totalItems != 1 ? "s" : "") total &nbsp;·&nbsp; Page @currentPage of @(totalPages < 1 ? 1 : totalPages)</span>
+            <h1>@inventory.Title ” Items</h1>
+            <span class="items-meta">@totalItems item@(totalItems != 1 ? "s" : "") total  ·  Page @currentPage of @(totalPages < 1 ? 1 : totalPages)</span>
         </div>
        
         <div class="d-flex flex-column gap-2">
             <div class="d-flex gap-1 ms-auto">
-                <a href="/Inventories/Details/@inventory.Id" class="btn btn-secondary btn-sm">← Back</a>
+                <a href="/Inventories/Details/@inventory.Id" class="btn btn-secondary btn-sm">† ← ← Back</a>
                 @if (canEdit)
                 {
                     <button class="btn btn-primary btn-sm" id="addItemBtn">+ Add Item</button>
@@ -34,7 +34,7 @@
             <div class="d-flex gap-1 ms-auto">
                 <form class="d-inline" method="get" asp-controller="Inventories" asp-action="Items" asp-route-id="@inventory.Id">
                     <div class="input-group d-inline-flex" style="width: auto;">
-                        <input type="text" name="search" class="form-control" placeholder="Search items..." value="">
+                        <input type="text" name="search" class="form-control" placeholder="Search items..." value="@((string)ViewBag.SearchTerm ?? "")">
                         <button class="btn btn-outline-secondary" type="submit">Search</button>
                     </div>
                 </form>
@@ -45,7 +45,7 @@
     @if (!Model.Any())
     {
         <div class="empty-state">
-            <div class="empty-icon">📦</div>
+            <div class="empty-icon">🔐¦</div>
             <p>No items in this inventory yet.</p>
             @if (canEdit)
             {
@@ -84,7 +84,7 @@
                                 </td>
                             }
                             <td><span class="custom-id-badge">@item.CustomId</span></td>
-                            <td>@(item.CreatedBy?.UserName ?? "—")</td>
+                            <td>@(item.CreatedBy?.UserName ?? "”")</td>
                             @foreach (var field in inventory.CustomFields.Where(f => f.IsVisibleInTable).OrderBy(f => f.DisplayOrder))
                             {
                                 <td>@Html.Raw(GetFieldDisplay(item, field))</td>
@@ -107,10 +107,10 @@
                 </tbody>
             </table>
 
-            <!-- Pagination — always visible -->
+            <!-- Pagination ” always visible -->
             <div class="pagination-wrap">
                 <span class="pagination-info">
-                    Showing @((currentPage - 1) * 5 + 1)–@(Math.Min(currentPage * 5, totalItems)) of @totalItems item@(totalItems != 1 ? "s" : "")
+                    Showing @((currentPage - 1) * 5 + 1)“@(Math.Min(currentPage * 5, totalItems)) of @totalItems item@(totalItems != 1 ? "s" : "")
                 </span>
                 <div class="pagination-controls">
                     @{
@@ -149,9 +149,9 @@
         {
             <div id="toolbox" class="toolbox d-none" role="toolbar" aria-label="Item actions">
                 <span class="toolbox-label" id="selCount">0 selected</span>
-                <button class="btn btn-sm btn-outline-primary" id="editBtn" disabled>✏️ Edit</button>
-                <button class="btn btn-sm btn-outline-danger" id="deleteBtn">🗑 Delete</button>
-                <button class="btn btn-sm btn-outline-secondary" id="clearBtn">✕ Clear</button>
+                <button class="btn btn-sm btn-outline-primary" id="editBtn" disabled>œ Edit</button>
+                <button class="btn btn-sm btn-outline-danger" id="deleteBtn">🔐‘ Delete</button>
+                <button class="btn btn-sm btn-outline-secondary" id="clearBtn">œ• Clear</button>
             </div>
         }
     }
@@ -173,15 +173,25 @@
                 <div id="itemFormFields">
                     @foreach (var field in inventory.CustomFields.OrderBy(f => f.DisplayOrder))
                     {
+                        var slotIndex = GetSlotIndex(inventory.CustomFields, field);
+                        var propName = field.FieldType switch
+                        {
+                            CustomFieldType.SingleLineText => $"CustomString{slotIndex}Value",
+                            CustomFieldType.MultiLineText => $"CustomText{slotIndex}Value",
+                            CustomFieldType.Numeric => $"CustomNumber{slotIndex}Value",
+                            CustomFieldType.Boolean => $"CustomBool{slotIndex}Value",
+                            CustomFieldType.Link => $"CustomLink{slotIndex}Value",
+                            _ => $"Custom{slotIndex}Value"
+                        };
                         <div class="mb-3">
-                            <label class="form-label fw-semibold" for="field_@field.FieldName">
+                            <label class="form-label fw-semibold" for="field_@System.Web.HttpUtility.HtmlAttributeEncode(propName)">
                                 @field.Title
                             </label>
                             @if (!string.IsNullOrEmpty(field.Description))
                             {
                                 <small class="text-muted d-block mb-1">@field.Description</small>
                             }
-                            @Html.Raw(GetFieldInput(field))
+                            @Html.Raw(GetFieldInput(field, inventory.CustomFields))
                         </div>
                     }
                 </div>
@@ -195,13 +205,11 @@
 </div>
 
 @functions {
-    /// <summary>Returns the field slot index for a given field and its type-based position.</summary>
     private static int GetSlotIndex(ICollection<CustomField> allFields, CustomField target)
     {
-        // Count how many fields of the same type come before this one (by DisplayOrder)
         int idx = allFields
             .Where(f => f.FieldType == target.FieldType && f.DisplayOrder < target.DisplayOrder)
-            .Count() + 1; // 1-based
+            .Count() + 1;
         return idx;
     }
 
@@ -214,7 +222,7 @@
             CustomFieldType.Numeric => GetNumberFieldValue(item, field),
             CustomFieldType.Boolean => GetBoolFieldValue(item, field),
             CustomFieldType.Link => GetLinkFieldValue(item, field),
-            _ => "—"
+            _ => "”"
         };
     }
 
@@ -236,7 +244,7 @@
     {
         var values = new[] { item.CustomNumber1Value, item.CustomNumber2Value, item.CustomNumber3Value };
         var idx = GetSlotIndex(item.Inventory!.CustomFields, field) - 1;
-        if (idx >= values.Length || !values[idx].HasValue) return "—";
+        if (idx >= values.Length || !values[idx].HasValue) return "”";
         return $"<span class='cell-truncate'>{System.Web.HttpUtility.HtmlEncode(values[idx].ToString())}</span>";
     }
 
@@ -255,51 +263,42 @@
     }
 
     private static string Escape(string? val) =>
-        string.IsNullOrWhiteSpace(val) ? "—" :
+        string.IsNullOrWhiteSpace(val) ? "”" :
         $"<span class='cell-truncate' title='{System.Web.HttpUtility.HtmlAttributeEncode(val)}'>{System.Web.HttpUtility.HtmlEncode(val)}</span>";
 
     private static string Truncate(string? val)
     {
-        if (string.IsNullOrWhiteSpace(val)) return "—";
+        if (string.IsNullOrWhiteSpace(val)) return "”";
         var display = val.Length > 40 ? val[..40] + "…" : val;
         return $"<span class='cell-truncate' title='{System.Web.HttpUtility.HtmlAttributeEncode(val)}'>{System.Web.HttpUtility.HtmlEncode(display)}</span>";
     }
 
     private static string BoolDisplay(bool? val) =>
-        val == true ? "<span class='bool-yes'>✓</span>" : "<span class='bool-no'>✗</span>";
+        val == true ? "<span class='bool-yes'>œ“</span>" : "<span class='bool-no'>œ—</span>";
 
     private static string LinkDisplay(string? url)
     {
-        if (string.IsNullOrWhiteSpace(url)) return "—";
+        if (string.IsNullOrWhiteSpace(url)) return "”";
         var encoded = System.Web.HttpUtility.HtmlAttributeEncode(url);
-        return $"<span class='cell-link'><a href='{encoded}' target='_blank' rel='noopener noreferrer'>↗ Link</a></span>";
+        return $"<span class='cell-link'><a href='{encoded}' target='_blank' rel='noopener noreferrer'>†— Link</a></span>";
     }
 
-    private string GetFieldInput(CustomField field)
+    private string GetFieldInput(CustomField field, ICollection<CustomField> allFields)
     {
-        // Map field names to their corresponding DTO property names
-        var fieldToProperty = new Dictionary<string, string>
+        int slotIndex = GetSlotIndex(allFields, field);
+
+        string propName = field.FieldType switch
         {
-            { "CustomString1", "CustomString1Value" },
-            { "CustomString2", "CustomString2Value" },
-            { "CustomString3", "CustomString3Value" },
-            { "CustomText1", "CustomText1Value" },
-            { "CustomText2", "CustomText2Value" },
-            { "CustomText3", "CustomText3Value" },
-            { "CustomNumber1", "CustomNumber1Value" },
-            { "CustomNumber2", "CustomNumber2Value" },
-            { "CustomNumber3", "CustomNumber3Value" },
-            { "CustomBool1", "CustomBool1Value" },
-            { "CustomBool2", "CustomBool2Value" },
-            { "CustomBool3", "CustomBool3Value" },
-            { "CustomLink1", "CustomLink1Value" },
-            { "CustomLink2", "CustomLink2Value" },
-            { "CustomLink3", "CustomLink3Value" }
+            CustomFieldType.SingleLineText => $"CustomString{slotIndex}Value",
+            CustomFieldType.MultiLineText => $"CustomText{slotIndex}Value",
+            CustomFieldType.Numeric => $"CustomNumber{slotIndex}Value",
+            CustomFieldType.Boolean => $"CustomBool{slotIndex}Value",
+            CustomFieldType.Link => $"CustomLink{slotIndex}Value",
+            _ => ""
         };
 
-        var propName = fieldToProperty.ContainsKey(field.FieldName) 
-            ? fieldToProperty[field.FieldName] 
-            : field.FieldName;
+        if (string.IsNullOrEmpty(propName))
+            propName = $"Custom{slotIndex}Value";
 
         var id = $"field_{System.Web.HttpUtility.HtmlAttributeEncode(propName)}";
         var name = System.Web.HttpUtility.HtmlAttributeEncode(propName);
@@ -337,15 +336,25 @@
                 <div id="itemFormFields">
                     @foreach (var field in inventory.CustomFields.OrderBy(f => f.DisplayOrder))
                     {
+                        var slotIndex = GetSlotIndex(inventory.CustomFields, field);
+                        var propName = field.FieldType switch
+                        {
+                            CustomFieldType.SingleLineText => $"CustomString{slotIndex}Value",
+                            CustomFieldType.MultiLineText => $"CustomText{slotIndex}Value",
+                            CustomFieldType.Numeric => $"CustomNumber{slotIndex}Value",
+                            CustomFieldType.Boolean => $"CustomBool{slotIndex}Value",
+                            CustomFieldType.Link => $"CustomLink{slotIndex}Value",
+                            _ => $"Custom{slotIndex}Value"
+                        };
                         <div class="mb-3">
-                            <label class="form-label fw-semibold" for="field_@field.FieldName">
+                            <label class="form-label fw-semibold" for="field_@System.Web.HttpUtility.HtmlAttributeEncode(propName)">
                                 @field.Title
                             </label>
                             @if (!string.IsNullOrEmpty(field.Description))
                             {
                                 <small class="text-muted d-block mb-1">@field.Description</small>
                             }
-                            @Html.Raw(GetFieldInput(field))
+                            @Html.Raw(GetFieldInput(field, inventory.CustomFields))
                         </div>
                     }
                 </div>
@@ -364,7 +373,6 @@
 (function () {
     'use strict';
 
-    // Properly encode and quote all Razor values
     const INV_ID     = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(inventory.Id));
     const USER_ID    = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userId));
     const CAN_EDIT   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(canEdit));
@@ -372,10 +380,9 @@
     const CUSTOM_ID_FORMAT = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(inventory.CustomIdFormat ?? ""));
 
     let bsModal = null;
-    let editingItemId = null; // null = add mode, number = edit mode
+    let editingItemId = null;
 
-    
-    document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
         const modalEl = document.getElementById('itemModal');
         if (modalEl) bsModal = new bootstrap.Modal(modalEl);
 
@@ -387,18 +394,16 @@
         bindLikeButtons();
     });
 
-   
-    function bindAddButtons() {
+function bindAddButtons() {
         document.getElementById('addItemBtn')?.addEventListener('click', openAddModal);
         document.getElementById('addFirstItem')?.addEventListener('click', openAddModal);
     }
 
     function openAddModal() {
-        // Check if CustomIdFormat is configured
         const format = CUSTOM_ID_FORMAT?.trim() || '';
         
         if (!format || format === '[]') {
-            showFlash('⚙️ Custom ID Format is not configured. Please set up a Custom ID Format in Settings before creating items.', 'warning');
+            showFlash('š™ Custom ID Format is not configured. Please set up a Custom ID Format in Settings before creating items.', 'warning');
             return;
         }
 
@@ -430,7 +435,6 @@
             const item = await resp.json();
             resetForm();
 
-            // Map custom field values to form inputs by field name
             const fieldMap = {
                 customString1Value: 'CustomString1Value',
                 customString2Value: 'CustomString2Value',
@@ -465,8 +469,7 @@
         }
     }
 
-    
-    function bindSave() {
+function bindSave() {
         document.getElementById('saveBtn')?.addEventListener('click', saveItem);
     }
 
@@ -476,10 +479,8 @@
         const url     = isEdit ? `/api/items/${editingItemId}` : '/api/items';
         const method  = isEdit ? 'PUT' : 'POST';
 
-        // Build DTO from form
         const dto = { inventoryId: INV_ID };
 
-        // Collect form values with proper property names
         const fieldMap = {
             'CustomString1Value': 'CustomString1Value',
             'CustomString2Value': 'CustomString2Value',
@@ -513,13 +514,11 @@
             }
         });
 
-        // Add ID and Version for edit
         if (isEdit) {
             dto.id = editingItemId;
-            dto.version = 1; // Could be retrieved from form if needed
+            dto.version = 1;
         }
 
-        // Spinner state
         saveBtn.disabled = true;
         saveBtn.classList.add('btn-saving');
         saveBtn.innerHTML = '<span class="spinner"></span>' + (isEdit ? 'Updating…' : 'Saving…');
@@ -536,7 +535,6 @@
 
             if (resp.ok) {
                 bsModal?.hide();
-                // Show success flash BEFORE reload so it doesn't disappear
                 sessionStorage.setItem('_flashMsg', isEdit ? 'Item updated successfully.' : 'Item added to inventory successfully.');
                 location.reload();
             } else {
@@ -562,26 +560,20 @@
         }
     }
 
-    /* Restore flash message after reload */
-    (function restoreFlash() {
+(function restoreFlash() {
         const msg = sessionStorage.getItem('_flashMsg');
         if (msg) {
             sessionStorage.removeItem('_flashMsg');
-            // Wait for DOMContentLoaded handled above; show after paint
             document.addEventListener('DOMContentLoaded', () => showFlash(msg, 'success'));
         }
     })();
 
-    /* ------------------------------------------------------------------ */
-    /* Checkboxes — single selection only                                    */
-    /* ------------------------------------------------------------------ */
-    function bindCheckboxes() {
+function bindCheckboxes() {
         if (!CAN_EDIT) return;
 
         document.querySelectorAll('.item-checkbox').forEach(cb => {
             cb.addEventListener('change', function () {
                 if (this.checked) {
-                    // Deselect all others (single-select)
                     document.querySelectorAll('.item-checkbox').forEach(other => {
                         if (other !== this) other.checked = false;
                     });
@@ -599,10 +591,7 @@
         });
     }
 
-    /* ------------------------------------------------------------------ */
-    /* Toolbox                                                               */
-    /* ------------------------------------------------------------------ */
-    function bindToolbox() {
+function bindToolbox() {
         if (!CAN_EDIT) return;
 
         document.getElementById('editBtn')?.addEventListener('click', () => {
@@ -631,16 +620,12 @@
             const label = document.getElementById('selCount');
             if (label) label.textContent = `${checked} selected`;
 
-            // Edit only enabled for exactly 1 selected
             const editBtn = document.getElementById('editBtn');
             if (editBtn) editBtn.disabled = checked !== 1;
         }
     }
 
-    /* ------------------------------------------------------------------ */
-    /* Delete                                                                */
-    /* ------------------------------------------------------------------ */
-    async function deleteSelected() {
+async function deleteSelected() {
         const cbs = [...document.querySelectorAll('.item-checkbox:checked')];
         if (!cbs.length) return;
 
@@ -671,10 +656,7 @@
         location.reload();
     }
 
-    /* ------------------------------------------------------------------ */
-    /* Likes                                                                 */
-    /* ------------------------------------------------------------------ */
-    function bindLikeButtons() {
+function bindLikeButtons() {
         document.querySelectorAll('.like-btn').forEach(btn => {
             btn.addEventListener('click', toggleLike);
         });
@@ -682,7 +664,6 @@
 
     async function loadAllLikes() {
         const buttons = document.querySelectorAll('.like-btn');
-        // Fetch all item like states in parallel
         await Promise.all([...buttons].map(btn => loadItemLikes(btn)));
     }
 
@@ -695,14 +676,13 @@
 
             btn.querySelector('.like-count').textContent = data.count ?? 0;
 
-            // data.userLiked or data.isLiked = whether the current authenticated user already liked
             const userLiked = IS_AUTH && (!!data.userLiked || !!data.isLiked);
             btn.dataset.liked = userLiked ? 'true' : 'false';
-            btn.querySelector('.heart-icon').textContent = userLiked ? '♥' : '♡';
+            btn.querySelector('.heart-icon').textContent = userLiked ? '™¥' : '♡';
             btn.classList.toggle('liked', userLiked);
         } catch (err) {
             console.error('Error loading likes:', err);
-            btn.querySelector('.like-count').textContent = '—';
+            btn.querySelector('.like-count').textContent = '”';
         }
     }
 
@@ -716,7 +696,6 @@
 
         const itemId = btn.dataset.itemId;
 
-        // Optimistic UI
         const wasLiked = btn.dataset.liked === 'true';
         const countEl  = btn.querySelector('.like-count');
         const heartEl  = btn.querySelector('.heart-icon');
@@ -724,7 +703,7 @@
 
         btn.dataset.liked = wasLiked ? 'false' : 'true';
         countEl.textContent = wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1;
-        heartEl.textContent = wasLiked ? '♡' : '♥';
+        heartEl.textContent = wasLiked ? '♡' : '™¥';
         btn.classList.toggle('liked', !wasLiked);
         btn.disabled = true;
 
@@ -738,10 +717,9 @@
                 countEl.textContent = data.likeCount ?? countEl.textContent;
                 const serverLiked = !!data.liked;
                 btn.dataset.liked = serverLiked ? 'true' : 'false';
-                heartEl.textContent = serverLiked ? '♥' : '♡';
+                heartEl.textContent = serverLiked ? '™¥' : '♡';
                 btn.classList.toggle('liked', serverLiked);
             } else {
-                // Roll back optimistic update
                 rollbackLike(btn, wasLiked, prevCount);
             }
         } catch {
@@ -754,14 +732,11 @@
     function rollbackLike(btn, wasLiked, prevCount) {
         btn.dataset.liked = wasLiked ? 'true' : 'false';
         btn.querySelector('.like-count').textContent = prevCount;
-        btn.querySelector('.heart-icon').textContent = wasLiked ? '♥' : '♡';
+        btn.querySelector('.heart-icon').textContent = wasLiked ? '™¥' : '♡';
         btn.classList.toggle('liked', wasLiked);
     }
 
-    /* ------------------------------------------------------------------ */
-    /* Flash messages                                                        */
-    /* ------------------------------------------------------------------ */
-    function showFlash(msg, type = 'success') {
+function showFlash(msg, type = 'success') {
         const container = document.getElementById('flashContainer');
         if (!container) return;
 
@@ -770,7 +745,7 @@
         el.setAttribute('role', 'alert');
         el.innerHTML = `
             <span>${escapeHtml(msg)}</span>
-            <button class="flash-close" aria-label="Dismiss">×</button>
+            <button class="flash-close" aria-label="Dismiss">Ã—</button>
         `;
         el.querySelector('.flash-close').addEventListener('click', () => el.remove());
         container.appendChild(el);
@@ -780,10 +755,7 @@
         }
     }
 
-    /* ------------------------------------------------------------------ */
-    /* Helpers                                                               */
-    /* ------------------------------------------------------------------ */
-    function getAntiForgeryToken() {
+function getAntiForgeryToken() {
         return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
     }
 
@@ -791,11 +763,18 @@
         return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
-    /* Restore any flash message that was stored before page reload */
-    const _pendingFlash = sessionStorage.getItem('_flashMsg');
+const _pendingFlash = sessionStorage.getItem('_flashMsg');
     if (_pendingFlash) {
         sessionStorage.removeItem('_flashMsg');
         document.addEventListener('DOMContentLoaded', () => showFlash(_pendingFlash, 'success'));
     }
 })();
 </script>
+
+
+
+
+
+
+
+

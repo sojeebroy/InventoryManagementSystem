@@ -1,4 +1,4 @@
-@using Inventory_Management_System.Models.ViewModels
+﻿@using Inventory_Management_System.Models.ViewModels
 @model SearchResultsViewModel
 
 @{
@@ -30,8 +30,7 @@
         </div>
     </div>
 
-
-    <div class="row">
+<div class="row">
         <div class="col-md-8 mx-auto">
             @if (Model.Results.Any())
             {
@@ -55,8 +54,8 @@
                                     <div>
                                         <small class="text-muted">
                                             By <strong>@inventory.OwnerName</strong> 
-                                            • @inventory.CreatedAt.ToString("MMM dd, yyyy")
-                                            • @inventory.ItemCount items
+                                            ¢ @inventory.CreatedAt.ToString("MMM dd, yyyy")
+                                            ¢ @inventory.ItemCount items
                                         </small>
                                     </div>
                                     <div class="mt-2">
@@ -121,3 +120,4 @@
         }
     });
 </script>
+

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Models.DTOs;
@@ -37,10 +37,8 @@ namespace Inventory_Management_System.Services
                     $"Cannot add more fields of type {field.FieldType}. Maximum {MaxFieldsPerType} allowed.");
             }
 
-            // Set field name based on type and count
             field.FieldName = GenerateFieldName(field.InventoryId, field.FieldType);
 
-            // Set display order
             var maxOrder = await _context.CustomFields
                 .Where(f => f.InventoryId == field.InventoryId)
                 .MaxAsync(f => (int?)f.DisplayOrder) ?? 0;
@@ -76,9 +74,49 @@ namespace Inventory_Management_System.Services
             var field = await _context.CustomFields.FindAsync(id);
             if (field != null)
             {
+                await ClearFieldDataFromItemsAsync(field);
+
                 _context.CustomFields.Remove(field);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        private async Task ClearFieldDataFromItemsAsync(CustomField field)
+        {
+            try
+            {
+                var items = await _context.Items
+                    .Where(i => i.InventoryId == field.InventoryId)
+                    .ToListAsync();
+
+                if (!items.Any())
+                    return;
+
+                var columnProperty = CustomFieldMappingService.GetItemPropertyForFieldName(field.FieldName);
+
+                foreach (var item in items)
+                {
+                    var prop = typeof(Item).GetProperty(columnProperty);
+                    if (prop != null && prop.CanWrite)
+                    {
+                        prop.SetValue(item, null);
+                    }
+                }
+
+                _context.Items.UpdateRange(items);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"[CustomFieldService] Cleared {items.Count} items for deleted field '{field.Title}' (FieldName: {field.FieldName})");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CustomFieldService] Error clearing field data: {ex.Message}");
+            }
+        }
+
+        private string GetItemPropertyForFieldName(string? fieldName)
+        {
+            return CustomFieldMappingService.GetItemPropertyForFieldName(fieldName);
         }
 
         public async Task ReorderCustomFieldsAsync(int inventoryId, List<(int id, int order)> orderedFields)
@@ -148,3 +186,4 @@ namespace Inventory_Management_System.Services
         }
     }
 }
+

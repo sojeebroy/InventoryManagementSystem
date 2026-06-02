@@ -1,4 +1,4 @@
-using Markdig;
+﻿using Markdig;
 
 namespace Inventory_Management_System.Helpers;
 
@@ -16,3 +16,4 @@ public static class MarkdownHelper
         return Markdown.ToHtml(markdown, Pipeline);
     }
 }
+

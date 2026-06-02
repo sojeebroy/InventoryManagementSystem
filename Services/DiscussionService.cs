@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
 namespace Inventory_Management_System.Services.Interfaces;
@@ -47,7 +47,6 @@ public class DiscussionService : IDiscussionService
         _context.Discussions.Add(discussion);
         await _context.SaveChangesAsync();
 
-        // Return with user included
         await _context.Entry(discussion).Reference(d => d.User).LoadAsync();
         return discussion;
     }
@@ -69,3 +68,4 @@ public class DiscussionService : IDiscussionService
             .FirstOrDefaultAsync(d => d.Id == id);
     }
 }
+

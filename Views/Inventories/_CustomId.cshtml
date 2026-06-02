@@ -1,4 +1,4 @@
-@model Inventory
+﻿@model Inventory
 <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -102,10 +102,8 @@
 <script>
     const inventoryId = @System.Text.Json.JsonSerializer.Serialize(Model.Id);
 
-    // Render the server JSON directly as a proper JS array.
     let idElements = @Html.Raw(string.IsNullOrEmpty(Model.CustomIdFormat) ? "[]" : Model.CustomIdFormat);
 
-    // Ensure we have an actual Array (some previous codepaths could leave a string).
     if (!Array.isArray(idElements)) {
         try {
             idElements = JSON.parse(idElements || "[]");
@@ -124,12 +122,17 @@
         idElements.forEach((el, idx) => {
             const preview = el.type === 'FixedText' || el.type === 0 ? `"${el.value}"` : `[${el.type}]`;
             const badge = document.createElement('div');
-            badge.className = 'col-auto';
+            badge.className = 'col-12 field-badge mb-2';
             badge.innerHTML = `
-                <span class="badge bg-secondary" draggable="true" data-index="${idx}">
-                    ${preview}
-                    <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 0.7rem;"></button>
+                <span class="badge bg-secondary d-flex justify-content-between align-items-center w-100"
+                    draggable="true"
+                    data-index="${idx}"
+                    style="font-size: 1.1rem; padding: 0.75rem 1.2rem;">
+                    <span>${preview}</span>
+                        <button type="button" class="btn-close btn-close-white" style="font-size: 0.8rem;"></button>
+                    </span>
                 </span>
+
             `;
             container.appendChild(badge);
 
@@ -139,13 +142,64 @@
                 updatePreview();
             });
         });
+        attachDragHandlers();
         updatePreview();
     }
 
-    // Helper to generate random hex strings
+    let draggedBadge = null;
+    function attachDragHandlers() {
+        const container = document.getElementById('idElementsContainer');
+        container.querySelectorAll('.field-badge').forEach(b => {
+            const span = b.querySelector('span[draggable]');
+            if (!span) return;
+            span.addEventListener('dragstart', (ev) => {
+                draggedBadge = b;
+                b.style.opacity = '0.5';
+                ev.dataTransfer.effectAllowed = 'move';
+            });
+            span.addEventListener('dragend', () => {
+                if (draggedBadge) draggedBadge.style.opacity = '1';
+                draggedBadge = null;
+            });
+        });
+
+        const containerEl = document.getElementById('idElementsContainer');
+        containerEl.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const after = getDragAfterElement(containerEl, e.clientY);
+            if (!after) {
+                if (draggedBadge && draggedBadge.parentElement !== containerEl) containerEl.appendChild(draggedBadge);
+                else if (draggedBadge) containerEl.appendChild(draggedBadge);
+            } else {
+                containerEl.insertBefore(draggedBadge, after);
+            }
+        });
+
+        containerEl.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const newOrder = Array.from(containerEl.querySelectorAll('.field-badge')).map(b => parseInt(b.querySelector('span').dataset.index, 10));
+            const reordered = newOrder.map(i => idElements[i]);
+            idElements = reordered;
+            renderIdElements();
+            updatePreview();
+        });
+    }
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.field-badge')].filter(el => el !== draggedBadge);
+        let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
+        for (const child of draggableElements) {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                closest = { offset: offset, element: child };
+            }
+        }
+        return closest.element;
+    }
+
     const randHex = (len) => Math.floor(Math.random() * Math.pow(16, len)).toString(16).toUpperCase().padStart(len, '0');
 
-    // Helper to generate random digit strings
     const randDigits = (len) => Array.from({length: len}, () => Math.floor(Math.random() * 10)).join('');
 
     function updatePreview() {
@@ -235,7 +289,6 @@
         addIdElementModal.hide();
     });
 
-    // Helper to get anti-forgery token
     function getAntiForgeryToken() {
         return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
     }
@@ -269,20 +322,18 @@
             console.log('Response URL:', response.url);
             console.log('Response Headers:', response.headers.get('content-type'));
 
-            // Check if response is OK before parsing
             if (!response.ok) {
                 const text = await response.text();
                 console.error('Server Error Response:', text);
                 console.error('Status:', response.status);
-                alert('❌ Error ' + response.status + ': Could not save format. Check console for details.');
+                alert('Œ Error ' + response.status + ': Could not save format. Check console for details.');
                 return;
             }
 
-            // Check content-type before parsing JSON
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 console.error('Invalid content-type:', contentType);
-                alert('❌ Error: Server returned non-JSON response');
+                alert('Œ Error: Server returned non-JSON response');
                 return;
             }
 
@@ -290,19 +341,21 @@
             console.log('Response:', result);
 
             if (result.success) {
-                alert('✅ Custom ID format saved successfully!');
+                alert('œ… Custom ID format saved successfully!');
                 location.reload();
             } else {
-                alert('❌ Error: ' + (result.error || 'Unknown error'));
+                alert('Œ Error: ' + (result.error || 'Unknown error'));
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('❌ Error saving format: ' + error.message);
+            alert('Œ Error saving format: ' + error.message);
         }
     });
 
-    // Initial render
     renderIdElements();
 </script>
 
 <link rel="stylesheet" href="~/css/settings.css" />
+
+
+

@@ -1,15 +1,9 @@
-@using Inventory_Management_System.Services.Interfaces
+﻿@using Inventory_Management_System.Services.Interfaces
 @model InventoryStatistics
 @{
     var inventory = (Inventory)ViewBag.Inventory;
     var totalDiscussions = (int)ViewBag.TotalDiscussions;
 }
-
-<div class="mb-3">
-    <a href="/Inventories/Statistics/@inventory.Id" class="btn btn-sm btn-info" title="Full view">
-        <i class="bi bi-fullscreen"></i> Full View
-    </a>
-</div>
 
 <div class="row">
     <div class="col-md-4 mb-3">
@@ -176,3 +170,4 @@
         }
     </div>
 }
+
