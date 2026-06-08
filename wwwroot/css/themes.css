@@ -1,0 +1,396 @@
+﻿
+
+:root,
+html[data-theme="light"] {
+    
+    --primary: #007bff;
+    --primary-hover: #0056b3;
+    --primary-active: #004085;
+    --primary-disabled: #6c757d;
+
+--secondary: #6c757d;
+    --secondary-hover: #5a6268;
+
+--success: #28a745;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --info: #17a2b8;
+
+--text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #999;
+    --text-light: #f8f9fa;
+
+--bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-hover: #f1f3f5;
+    --bg-input: #ffffff;
+    --bg-disabled: #f8f9fa;
+
+--border-color: #dee2e6;
+    --border-color-light: #e9ecef;
+    --border-color-dark: #adb5bd;
+
+--card-bg: #ffffff;
+    --card-border: #dee2e6;
+    --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+
+--modal-bg: #ffffff;
+    --modal-backdrop: rgba(0, 0, 0, 0.5);
+
+--navbar-bg: #ffffff;
+    --navbar-text: #212529;
+    --navbar-border: #dee2e6;
+
+--table-bg: #ffffff;
+    --table-stripe-bg: #f8f9fa;
+    --table-border: #dee2e6;
+    --table-hover-bg: #f5f5f5;
+
+--code-bg: #f8f9fa;
+    --code-text: #d63384;
+    --code-border: #dee2e6;
+
+--input-bg: #ffffff;
+    --input-border: #ced4da;
+    --input-border-focus: #80bdff;
+    --input-text: #495057;
+    --input-placeholder: #6c757d;
+
+--link-color: #007bff;
+    --link-hover: #0056b3;
+    --link-visited: #6f42c1;
+
+--scrollbar-track: #f1f1f1;
+    --scrollbar-thumb: #888;
+    --scrollbar-thumb-hover: #555;
+
+--badge-bg: #e9ecef;
+    --badge-text: #212529;
+
+--alert-bg: #f8d7da;
+    --alert-border: #f5c6cb;
+    --alert-text: #721c24;
+
+--sidebar-bg: #f8f9fa;
+    --sidebar-border: #dee2e6;
+
+--transition-speed: 0.3s;
+}
+
+html[data-theme="dark"] {
+    
+    --primary: #0d6efd;
+    --primary-hover: #0b5ed7;
+    --primary-active: #0a58ca;
+    --primary-disabled: #6c757d;
+
+--secondary: #6c757d;
+    --secondary-hover: #5c636a;
+
+--success: #198754;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --info: #0dcaf0;
+
+--text-primary: #f8f9fa;
+    --text-secondary: #adb5bd;
+    --text-muted: #999;
+    --text-light: #212529;
+
+--bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-tertiary: #3a3a3a;
+    --bg-hover: #404040;
+    --bg-input: #2d2d2d;
+    --bg-disabled: #1a1a1a;
+
+--border-color: #495057;
+    --border-color-light: #3a3a3a;
+    --border-color-dark: #6c757d;
+
+--card-bg: #2d2d2d;
+    --card-border: #495057;
+    --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.5);
+
+--modal-bg: #2d2d2d;
+    --modal-backdrop: rgba(0, 0, 0, 0.8);
+
+--navbar-bg: #1a1a1a;
+    --navbar-text: #f8f9fa;
+    --navbar-border: #495057;
+
+--table-bg: #2d2d2d;
+    --table-stripe-bg: #373737;
+    --table-border: #495057;
+    --table-hover-bg: #3a3a3a;
+
+--code-bg: #1a1a1a;
+    --code-text: #f0a0ff;
+    --code-border: #495057;
+
+--input-bg: #2d2d2d;
+    --input-border: #495057;
+    --input-border-focus: #0dcaf0;
+    --input-text: #f8f9fa;
+    --input-placeholder: #adb5bd;
+
+--link-color: #0dcaf0;
+    --link-hover: #31d0ff;
+    --link-visited: #b19cd9;
+
+--scrollbar-track: #2d2d2d;
+    --scrollbar-thumb: #555;
+    --scrollbar-thumb-hover: #888;
+
+--badge-bg: #495057;
+    --badge-text: #f8f9fa;
+
+--alert-bg: #3d2626;
+    --alert-border: #633031;
+    --alert-text: #f8d7da;
+
+--sidebar-bg: #2d2d2d;
+    --sidebar-border: #495057;
+
+--transition-speed: 0.3s;
+}
+
+@media (prefers-color-scheme: dark) {
+    html[data-theme="auto"] {
+        
+        --primary: #0d6efd;
+        --primary-hover: #0b5ed7;
+        --primary-active: #0a58ca;
+        --primary-disabled: #6c757d;
+
+        --secondary: #6c757d;
+        --secondary-hover: #5c636a;
+
+        --success: #198754;
+        --warning: #ffc107;
+        --danger: #dc3545;
+        --info: #0dcaf0;
+
+        --text-primary: #f8f9fa;
+        --text-secondary: #adb5bd;
+        --text-muted: #999;
+        --text-light: #212529;
+
+        --bg-primary: #1a1a1a;
+        --bg-secondary: #2d2d2d;
+        --bg-tertiary: #3a3a3a;
+        --bg-hover: #404040;
+        --bg-input: #2d2d2d;
+        --bg-disabled: #1a1a1a;
+
+        --border-color: #495057;
+        --border-color-light: #3a3a3a;
+        --border-color-dark: #6c757d;
+
+        --card-bg: #2d2d2d;
+        --card-border: #495057;
+        --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.5);
+
+        --modal-bg: #2d2d2d;
+        --modal-backdrop: rgba(0, 0, 0, 0.8);
+
+        --navbar-bg: #1a1a1a;
+        --navbar-text: #f8f9fa;
+        --navbar-border: #495057;
+
+        --table-bg: #2d2d2d;
+        --table-stripe-bg: #373737;
+        --table-border: #495057;
+        --table-hover-bg: #3a3a3a;
+
+        --code-bg: #1a1a1a;
+        --code-text: #f0a0ff;
+        --code-border: #495057;
+
+        --input-bg: #2d2d2d;
+        --input-border: #495057;
+        --input-border-focus: #0dcaf0;
+        --input-text: #f8f9fa;
+        --input-placeholder: #adb5bd;
+
+        --link-color: #0dcaf0;
+        --link-hover: #31d0ff;
+        --link-visited: #b19cd9;
+
+        --scrollbar-track: #2d2d2d;
+        --scrollbar-thumb: #555;
+        --scrollbar-thumb-hover: #888;
+
+        --badge-bg: #495057;
+        --badge-text: #f8f9fa;
+
+        --alert-bg: #3d2626;
+        --alert-border: #633031;
+        --alert-text: #f8d7da;
+
+        --sidebar-bg: #2d2d2d;
+        --sidebar-border: #495057;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    html[data-theme="auto"] {
+        
+    }
+}
+
+html {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color var(--transition-speed) ease,
+                color var(--transition-speed) ease;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color var(--transition-speed) ease,
+                color var(--transition-speed) ease;
+}
+
+a {
+    color: var(--link-color);
+}
+
+a:hover {
+    color: var(--link-hover);
+}
+
+a:visited {
+    color: var(--link-visited);
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.btn-primary:active,
+.btn-primary:focus {
+    background-color: var(--primary-active);
+    border-color: var(--primary-active);
+}
+
+input,
+textarea,
+select {
+    background-color: var(--input-bg);
+    border-color: var(--input-border);
+    color: var(--input-text);
+    transition: background-color var(--transition-speed) ease,
+                border-color var(--transition-speed) ease,
+                color var(--transition-speed) ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    background-color: var(--input-bg);
+    border-color: var(--input-border-focus);
+    color: var(--input-text);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--input-placeholder);
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-color: var(--card-border);
+    box-shadow: var(--card-shadow);
+    transition: background-color var(--transition-speed) ease,
+                border-color var(--transition-speed) ease;
+}
+
+table {
+    background-color: var(--table-bg);
+    color: var(--text-primary);
+}
+
+table thead {
+    background-color: var(--bg-secondary);
+    border-color: var(--table-border);
+}
+
+table tbody tr:hover {
+    background-color: var(--table-hover-bg);
+}
+
+table tbody tr:nth-child(odd) {
+    background-color: var(--table-stripe-bg);
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+.badge {
+    background-color: var(--badge-bg);
+    color: var(--badge-text);
+    transition: background-color var(--transition-speed) ease,
+                color var(--transition-speed) ease;
+}
+
+.alert-danger {
+    background-color: var(--alert-bg);
+    border-color: var(--alert-border);
+    color: var(--alert-text);
+}
+
+code,
+pre {
+    background-color: var(--code-bg);
+    color: var(--code-text);
+    border-color: var(--code-border);
+}
+
+.modal-content {
+    background-color: var(--modal-bg);
+    border-color: var(--border-color);
+}
+
+.modal-header,
+.modal-footer {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+* {
+    transition-property: background-color, border-color, color, box-shadow;
+    transition-duration: var(--transition-speed);
+    transition-timing-function: ease;
+}
+
+html.no-transitions * {
+    transition: none !important;
+}
+
+

@@ -1,0 +1,132 @@
+﻿@model Inventory
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h5 class="card-title mb-2">Custom Fields </h5>
+                <p class="text-muted small mb-0">
+                    Add up to 3 fields of each type to customize your items. Drag fields to reorder them.
+                </p>
+            </div>
+            <div id="autoSaveIndicator" class="ms-3">
+                <small class="text-muted d-none" id="savingIndicator">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving...
+                </small>
+                <small class="text-success d-none" id="savedIndicator">
+                    <i class="bi bi-check-circle me-2"></i>All changes saved
+                </small>
+            </div>
+        </div>
+
+        <div id="fieldsContainer" class="mb-4">
+            @foreach (var field in Model.CustomFields.OrderBy(f => f.DisplayOrder))
+            {
+                <div class="card mb-2 field-item" data-field-id="@field.Id" draggable="true" style="background-color: #f8f9fa; cursor: move;">
+                    <div class="card-body p-3">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-grip-vertical text-muted"></i>
+                                    <div>
+                                        <h6 class="mb-1">@field.Title</h6>
+                                        <small class="text-muted">
+                                            @field.FieldType
+                                            @if (field.Description != null)
+                                            {
+                                                <text> • @field.Description</text>
+                                            }
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge @(field.IsVisibleInTable ? "bg-info" : "bg-secondary")">
+                                    @(field.IsVisibleInTable ? "Visible" : "Hidden")
+                                </span>
+                                <button type="button" class="btn btn-sm btn-outline-warning editFieldBtn ms-2" data-field-id="@field.Id">
+                                    Edit
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger deleteFieldBtn" data-field-id="@field.Id">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (!Model.CustomFields.Any())
+            {
+                <div class="alert alert-secondary text-center py-4">
+                    <p class="mb-0">No custom fields added yet. Click "Add Custom Field" to get started.</p>
+                </div>
+            }
+        </div>
+
+        <div class="alert alert-info small mb-4" id="fieldLimitAlert" style="display: none;">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            You have reached the limit for one or more field types (3 fields maximum per type).
+        </div>
+
+        <div class="alert alert-danger small mb-4" id="fieldErrorAlert" style="display: none;">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <span id="fieldErrorMessage"></span>
+        </div>
+
+        <button type="button" class="btn btn-outline-primary" id="addFieldBtn">
+            <i class="bi bi-plus-lg"></i> Add Custom Field
+        </button>
+    </div>
+</div>
+
+<!-- Add/Edit Field Modal -->
+<div class="modal fade" id="fieldModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fieldModalTitle">Add Custom Field</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="fieldForm">
+                    <input type="hidden" id="fieldIdInput">
+                    <div class="mb-3">
+                        <label class="form-label" for="fieldNameInput">Field Name *</label>
+                        <input type="text" class="form-control" id="fieldNameInput" required maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="fieldTypeSelect">Field Type *</label>
+                        <select class="form-select" id="fieldTypeSelect" required>
+                            <option value="">Select type</option>
+                            <option value="SingleLineText">Single Line Text</option>
+                            <option value="MultiLineText">Multi-Line Text</option>
+                            <option value="Numeric">Numeric</option>
+                            <option value="Boolean">Boolean (Yes/No)</option>
+                            <option value="Link">Link/URL</option>
+                        </select>
+                        <small class="text-muted d-block mt-1">Type cannot be changed after creation</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="fieldDescriptionInput">Description (optional)</label>
+                        <textarea class="form-control" id="fieldDescriptionInput" rows="2" placeholder="Help text for users" maxlength="500"></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="fieldVisibleCheck" checked>
+                        <label class="form-check-label" for="fieldVisibleCheck">
+                            Visible in item table
+                        </label>
+                        <small class="text-muted d-block mt-1">Show this field in the items list view</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="deleteFieldModalBtn" style="display: none;">Delete</button>
+                <button type="button" class="btn btn-primary" id="saveFieldBtn">Save Field</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Fields JavaScript will be initialized from Settings.js -->
+

@@ -2,16 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
-
-namespace Inventory_Management_System.Services;
-
-public interface IInventoryAuthorizationService
-{
-    Task<bool> IsAdminAsync(string userId);
-    Task<bool> IsInventoryOwnerAsync(int inventoryId, string userId);
-    Task<bool> CanEditInventoryAsync(int inventoryId, string userId);
-    Task<bool> CanAddItemAsync(int inventoryId, string userId);
-}
+using Inventory_Management_System.Services.Interfaces;
 
 public class InventoryAuthorizationService : IInventoryAuthorizationService
 {

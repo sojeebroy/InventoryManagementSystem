@@ -1,0 +1,173 @@
+﻿@using Inventory_Management_System.Services.Interfaces
+@model InventoryStatistics
+@{
+    var inventory = (Inventory)ViewBag.Inventory;
+    var totalDiscussions = (int)ViewBag.TotalDiscussions;
+}
+
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title text-muted"><i class="bi bi-box"></i> Total Items</h6>
+                <h3 class="mb-0">@Model.TotalItems 📦</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title text-muted"><i class="bi bi-chat-dots"></i> Total Discussions</h6>
+                <h3 class="mb-0">@totalDiscussions 💬</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.Number1Stats != null || Model.Number2Stats != null || Model.Number3Stats != null)
+{
+    <h6 class="mb-3">Numeric Statistics</h6>
+    <div class="row">
+        @if (Model.Number1Stats != null)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title small">
+                            @Model.CustomFields.FirstOrDefault(f => f.FieldName == "CustomNumber1Value")?.Title
+                        </h6>
+                        <dl class="row small mb-0">
+                            <dt class="col-sm-6">Average:</dt>
+                            <dd class="col-sm-6">@Model.Number1Stats.Average</dd>
+
+                            <dt class="col-sm-6">Min:</dt>
+                            <dd class="col-sm-6">@Model.Number1Stats.Min</dd>
+
+                            <dt class="col-sm-6">Max:</dt>
+                            <dd class="col-sm-6">@Model.Number1Stats.Max</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.Number2Stats != null)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title small">
+                            @Model.CustomFields.FirstOrDefault(f => f.FieldName == "CustomNumber2Value")?.Title
+                        </h6>
+                        <dl class="row small mb-0">
+                            <dt class="col-sm-6">Average:</dt>
+                            <dd class="col-sm-6">@Model.Number2Stats.Average</dd>
+
+                            <dt class="col-sm-6">Min:</dt>
+                            <dd class="col-sm-6">@Model.Number2Stats.Min</dd>
+
+                            <dt class="col-sm-6">Max:</dt>
+                            <dd class="col-sm-6">@Model.Number2Stats.Max</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.Number3Stats != null)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title small">
+                            @Model.CustomFields.FirstOrDefault(f => f.FieldName == "CustomNumber3Value")?.Title
+                        </h6>
+                        <dl class="row small mb-0">
+                            <dt class="col-sm-6">Average:</dt>
+                            <dd class="col-sm-6">@Model.Number3Stats.Average</dd>
+
+                            <dt class="col-sm-6">Min:</dt>
+                            <dd class="col-sm-6">@Model.Number3Stats.Min</dd>
+
+                            <dt class="col-sm-6">Max:</dt>
+                            <dd class="col-sm-6">@Model.Number3Stats.Max</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (Model.String1Stats.Any() || Model.String2Stats.Any() || Model.String3Stats.Any())
+{
+    <h6 class="mb-3">Top Values</h6>
+    <div class="row">
+        @if (Model.String1Stats.Any())
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title small">
+                            @Model.CustomFields.FirstOrDefault(f => f.FieldName == "CustomString1Value")?.Title
+                        </h6>
+                        <ul class="list-unstyled small">
+                            @foreach (var item in Model.String1Stats)
+                            {
+                                <li class="mb-2">
+                                    <strong>@item.Value</strong>
+                                    <span class="badge bg-secondary ms-2">@item.Count</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.String2Stats.Any())
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title small">
+                            @Model.CustomFields.FirstOrDefault(f => f.FieldName == "CustomString2Value")?.Title
+                        </h6>
+                        <ul class="list-unstyled small">
+                            @foreach (var item in Model.String2Stats)
+                            {
+                                <li class="mb-2">
+                                    <strong>@item.Value</strong>
+                                    <span class="badge bg-secondary ms-2">@item.Count</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.String3Stats.Any())
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title small">
+                            @Model.CustomFields.FirstOrDefault(f => f.FieldName == "CustomString3Value")?.Title
+                        </h6>
+                        <ul class="list-unstyled small">
+                            @foreach (var item in Model.String3Stats)
+                            {
+                                <li class="mb-2">
+                                    <strong>@item.Value</strong>
+                                    <span class="badge bg-secondary ms-2">@item.Count</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+

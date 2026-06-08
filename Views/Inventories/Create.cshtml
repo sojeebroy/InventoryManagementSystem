@@ -1,4 +1,4 @@
-@using Inventory_Management_System.Models.DTOs
+﻿@using Inventory_Management_System.Models.DTOs
 @model CreateInventoryDto
 @{
     ViewData["Title"] = "Create Inventory";
@@ -9,7 +9,7 @@
         <div class="col-md-8 offset-md-2">
             <h1>Create New Inventory</h1>
 
-            <form asp-action="Create" method="post" class="mt-4">
+            <form id="createInventoryForm" asp-controller="Inventories" asp-action="Create" method="post" class="mt-4" enctype="multipart/form-data">
                 <div asp-validation-summary="All" class="alert alert-danger d-none"></div>
 
                 <div class="mb-3">
@@ -47,36 +47,52 @@
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="ImageUrl" class="form-label"></label>
-                    <input asp-for="ImageUrl" class="form-control" placeholder="Image URL (cloud storage)" type="url">
-                    <span asp-validation-for="ImageUrl" class="invalid-feedback"></span>
+                    <label asp-for="ImageFile" class="form-label">
+                        <span class="text-danger">*</span> Image File
+                    </label>
+                    <input asp-for="ImageFile" id="imageFileInput" type="file" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp" required>
+                    <small class="text-muted">Upload an image (jpg, jpeg, png, gif, webp) - Max 10MB</small>
+                    <span asp-validation-for="ImageFile" class="invalid-feedback d-block"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Tags</label>
-                    <input type="text" id="tagsInput" class="form-control" placeholder="Enter tags separated by commas">
+                    <img id="imagePreview" src="#" alt="Image preview" style="display: none; max-width: 300px; max-height: 300px; border-radius: 4px; margin-top: 10px;" />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="TagsInput" class="form-label"></label>
+                    <input asp-for="TagsInput" class="form-control" placeholder="Enter tags separated by commas (e.g., electronics, computers, laptops)">
+                    <span asp-validation-for="TagsInput" class="invalid-feedback"></span>
                     <small class="text-muted">Add tags to help users find your inventory</small>
                 </div>
 
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary">Create Inventory</button>
-                    <a href="/Inventories" class="btn btn-secondary">Cancel</a>
+                    <a href="/Dashboard" class="btn btn-secondary">Cancel</a>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        // Form validation
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function (e) {
-            if (!form.checkValidity()) {
-                e.preventDefault();
-                e.stopPropagation();
+<script>
+    (function () {
+        const fileInput = document.getElementById('imageFileInput');
+        const imagePreview = document.getElementById('imagePreview');
+
+        fileInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    imagePreview.setAttribute('src', event.target.result);
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.setAttribute('src', '#');
+                imagePreview.style.display = 'none';
             }
-            form.classList.add('was-validated');
         });
-    </script>
-}
+    })();
+</script>

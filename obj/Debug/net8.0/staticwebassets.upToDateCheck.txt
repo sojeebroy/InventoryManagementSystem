@@ -1,8 +1,22 @@
+wwwroot\css\discussion.css
+wwwroot\css\items.css
 wwwroot\css\login.css
+wwwroot\css\premium-login.css
+wwwroot\css\settings.css
 wwwroot\css\site.css
 wwwroot\css\theme.css
+wwwroot\css\themes.css
 wwwroot\favicon.ico
+wwwroot\js\CustomFields.js
+wwwroot\js\Details.js
+wwwroot\js\fields.js
+wwwroot\js\realtime-discussions.js
+wwwroot\js\Settings.js
+wwwroot\js\simple-theme-manager.js
 wwwroot\js\site.js
+wwwroot\js\TESTING_GUIDE.js
+wwwroot\js\theme-manager.js
+wwwroot\js\_Items.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css
@@ -60,4 +74,3 @@ wwwroot\lib\jquery\dist\jquery.js
 wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\LICENSE.txt
-wwwroot\css\premium-login.css

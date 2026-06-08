@@ -1,0 +1,357 @@
+﻿@using Inventory_Management_System.Models.ViewModels
+@model List<UserAdminViewModel>
+@{
+    ViewData["Title"] = "User Management"; 
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>👥 User Management</h1>
+        <a href="/Admin/Users" class="btn btn-secondary">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </a>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-8">
+                    <input type="text" name="searchTerm" class="form-control" 
+                           placeholder="Search by email, username, or name..." 
+                           value="@ViewBag.SearchTerm">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">🔒 Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Toolbar -->
+    <div class="card mb-3" id="bulkToolbar" style="display: none; background-color: #f0f7ff; border-left: 4px solid #0d6efd;">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <span id="selectedCount" style="font-weight: 600; color: #0d6efd;"></span>
+            </div>
+            <div class="btn-group gap-2" role="group">
+                <a href="#" class="btn btn-sm btn-info" id="viewBtn">🔒 View</a>
+                <button type="button" class="btn btn-sm btn-warning" id="blockBtn" onclick="handleBulkAction('block')">🔒 Block User</button>
+                <button type="button" class="btn btn-sm btn-info" id="adminBtn" onclick="handleBulkAction('admin')">⭐ Grant Admin</button>
+                <button type="button" class="btn btn-sm btn-danger" id="deleteBtn" onclick="handleBulkAction('delete')">🔒 Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="usersTable">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 3%">
+                            <input type="checkbox" id="selectAllCheckbox" class="form-check-input" onchange="toggleSelectAll(this)" style="display: none;">
+                        </th>
+                        <th style="width: 4%">Avatar</th>
+                        <th style="width: 14%">Email</th>
+                        <th style="width: 14%">Name</th>
+                        <th style="width: 10%">Roles</th>
+                        <th style="width: 10%">Status</th>
+                        <th style="width: 15%">Created</th>
+                        <th style="width: 15%">Last Login</th>
+@*                         <th style="width: 15%">Actions</th>
+ *@                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <p class="text-muted">No users found</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var user in Model)
+                        {
+                            <tr class="align-middle">
+                                <td>
+                                    <input type="checkbox" class="form-check-input user-checkbox" value="@user.Id" onchange="updateBulkToolbar()">
+                                </td>
+                                <td>
+                                    @* <img src="https://static.vecteezy.com/system/resources/thumbnails/027/951/137/small/stylish-spectacles-guy-3d-avatar-character-illustrations-png.png"
+                                         alt="Avatar"
+                                         class="rounded-circle"
+                                         width="32"
+                                         height="32"> *@
+                                    <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; ">
+                                        👤
+                                    </div>
+                                </td>
+                                <td>
+                                    <small class="text-monospace">@user.Email</small>
+                                </td>
+                                <td>
+                                    <strong>@user.FirstName @user.LastName</strong>
+                                </td>
+                                <td>
+                                    @foreach (var role in user.Roles)
+                                    {
+                                        @if (role == "Admin")
+                                        {
+                                            <span class="badge bg-danger">⭐ @role</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">@role</span>
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.IsBlocked)
+                                    {
+                                        <span class="badge bg-warning text-dark">🔒 Blocked</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">œ“ Active</span>
+                                    }
+                                </td>
+                                <td>
+                                    <small>@user.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                </td>
+                                <td>
+                                    <small>
+                                        @if (user.LastLoginAt.HasValue)
+                                        {
+                                            @user.LastLoginAt.Value.ToString("MMM dd, yyyy HH:mm")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Never</span>
+                                        }
+                                    </small>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" href="?page=1&searchTerm=@ViewBag.SearchTerm">First</a>
+                </li>
+                <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" href="?page=@(ViewBag.CurrentPage - 1)&searchTerm=@ViewBag.SearchTerm">Previous</a>
+                </li>
+
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    if (i == ViewBag.CurrentPage)
+                    {
+                        <li class="page-item active">
+                            <span class="page-link">@i</span>
+                        </li>
+                    }
+                    else if (i <= 3 || i >= ViewBag.TotalPages - 2 || (i >= ViewBag.CurrentPage - 2 && i <= ViewBag.CurrentPage + 2))
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="?page=@i&searchTerm=@ViewBag.SearchTerm">@i</a>
+                        </li>
+                    }
+                    else if (i == 4 || i == ViewBag.TotalPages - 3)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                }
+
+                <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="?page=@(ViewBag.CurrentPage + 1)&searchTerm=@ViewBag.SearchTerm">Next</a>
+                </li>
+                <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="?page=@ViewBag.TotalPages&searchTerm=@ViewBag.SearchTerm">Last</a>
+                </li>
+            </ul>
+        </nav>
+    }
+
+    <!-- Summary -->
+    <div class="alert alert-info mt-4">
+        <strong>Total Users:</strong> @ViewBag.TotalCount | 
+        <strong>Current Page:</strong> @ViewBag.CurrentPage of @ViewBag.TotalPages | 
+        <strong>Page Size:</strong> @ViewBag.PageSize
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .text-monospace {
+        font-family: 'Courier New', monospace;
+    }
+
+    .btn-group {
+        display: flex;
+    }
+
+    .form-check-input {
+        cursor: pointer;
+    }
+
+    .gap-2 {
+        gap: 0.5rem;
+    }
+</style>
+
+<script>
+    function updateBulkToolbar() {
+        const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+        const toolbar = document.getElementById('bulkToolbar');
+        const selectedCount = document.getElementById('selectedCount');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+
+        if (checkboxes.length > 0) {
+            toolbar.style.display = 'block';
+            selectedCount.textContent = `1 user selected`;
+        } else {
+            toolbar.style.display = 'none';
+            selectAllCheckbox.checked = false;
+        }
+
+        updateActionButtons();
+    }
+
+    function toggleSelectAll(checkbox) {
+        checkbox.checked = false;
+    }
+
+    function updateActionButtons() {
+        const checkbox = document.querySelector('.user-checkbox:checked');
+        const blockBtn = document.getElementById('blockBtn');
+        const adminBtn = document.getElementById('adminBtn');
+        const viewBtn = document.getElementById('viewBtn');
+
+        if (!checkbox) return;
+
+        const row = checkbox.closest('tr');
+        const userId = checkbox.value;
+
+        viewBtn.href = `/Admin/Users/${userId}`;
+
+        const isBlocked = row.querySelector('.badge.bg-warning') !== null;
+        blockBtn.textContent = isBlocked ? '🔒 Unblock User' : '🔒 Block User';
+
+        const isAdmin = row.querySelector('.badge.bg-danger') !== null;
+        adminBtn.textContent = isAdmin ? '¬‡ Revoke Admin' : '⭐ Grant Admin';
+    }
+
+    function handleBulkAction(action) {
+        const checkbox = document.querySelector('.user-checkbox:checked');
+
+        if (!checkbox) {
+            alert('Please select a user');
+            return;
+        }
+
+        const userId = checkbox.value;
+        const row = checkbox.closest('tr');
+        const userEmail = row.querySelector('small.text-monospace').textContent;
+        let actionUrl = '';
+        let shouldProceed = true;
+
+        switch(action) {
+            case 'block':
+                const isBlocked = row.querySelector('.badge.bg-warning') !== null;
+                actionUrl = `/Admin/Users/${userId}/${isBlocked ? 'Unblock' : 'Block'}`;
+                if (isBlocked) {
+                    shouldProceed = confirm(`Are you sure you want to unblock this user (${userEmail})?\n\nThis cannot be undone.`);
+                }
+                break;
+            case 'admin':
+                const isAdmin = row.querySelector('.badge.bg-danger') !== null;
+                actionUrl = `/Admin/Users/${userId}/${isAdmin ? 'RevokeAdmin' : 'GrantAdmin'}`;
+                break;
+            case 'delete':
+                shouldProceed = confirm(`Are you sure you want to DELETE this user?\n\nEmail: ${userEmail}\n\nThis action cannot be undone.`);
+                if (shouldProceed) {
+                    actionUrl = `/Admin/Users/${userId}/Delete`;
+                }
+                break;
+        }
+
+        if (shouldProceed && actionUrl) {
+            performAction(actionUrl);
+        }
+    }
+
+    function performAction(actionUrl) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = actionUrl;
+        form.style.display = 'none';
+
+        let tokenValue = '';
+        const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+        if (tokenElement) {
+            tokenValue = tokenElement.value;
+        } else {
+            const metaToken = document.querySelector('meta[name="__RequestVerificationToken"]');
+            if (metaToken) {
+                tokenValue = metaToken.getAttribute('content');
+            }
+        }
+
+        if (tokenValue) {
+            const tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = '__RequestVerificationToken';
+            tokenInput.value = tokenValue;
+            form.appendChild(tokenInput);
+        }
+
+        document.body.appendChild(form);
+
+        try {
+            form.submit();
+            setTimeout(() => {
+                if (form.parentNode) {
+                    form.parentNode.removeChild(form);
+                }
+            }, 2000);
+        } catch (e) {
+            console.error('Error submitting form:', e);
+            form.parentNode.removeChild(form);
+        }
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('user-checkbox')) {
+            if (e.target.checked) {
+                const allCheckboxes = document.querySelectorAll('.user-checkbox');
+                allCheckboxes.forEach(cb => {
+                    if (cb !== e.target) {
+                        cb.checked = false;
+                    }
+                });
+            }
+            updateBulkToolbar();
+        }
+    });
+</script>
+
+
+
+
+

@@ -1,80 +1,378 @@
+﻿@using Inventory_Management_System.Models
 @model List<Discussion>
 @{
+    ViewData["Title"] = "Discussion - " + ((Inventory)ViewBag.Inventory).Title;
     var inventory = (Inventory)ViewBag.Inventory;
     var canAdd = (bool)ViewBag.CanAdd;
-    var userId = (string)ViewBag.UserId;
+    var userId = (string?)ViewBag.UserId ?? "";
+    var isAdmin = (bool?)ViewBag.IsAdmin ?? false;
+    var totalPages = (int?)ViewBag.TotalPages ?? 1;
+    var currentPage = (int?)ViewBag.CurrentPage ?? 1;
+    var totalDiscussions = (int?)ViewBag.TotalDiscussions ?? 0;
 }
 
-@if (canAdd)
-{
-    <div class="mb-3">
-        <form id="discussionForm">
-            <div class="input-group">
-                <textarea id="discussionContent" class="form-control" placeholder="Share your thoughts..." rows="2" required></textarea>
-                <button type="button" class="btn btn-primary" id="postDiscussionBtn">Post</button>
-            </div>
-            <small class="text-muted">Markdown is supported</small>
-        </form>
-    </div>
-}
-
-<div id="discussionsList" class="discussion-container">
-    @if (!Model.Any())
-    {
-        <div class="empty-state">
-            <p class="text-muted">No discussions yet. Be the first to share!</p>
+<div class="container-main">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Discussion: @inventory.Title</h1>
+            <p class="text-muted">
+                <small>
+                    @totalDiscussions discussion@(totalDiscussions != 1 ? "s" : "") ¢
+                    @if (totalPages > 1)
+                    {
+                        <span>Page @currentPage of @totalPages</span>
+                    }
+                    else
+                    {
+                        <span>All posts</span>
+                    }
+                </small>
+            </p>
         </div>
-    }
-    else
-    {
-        <div class="list-group">
-            @foreach (var discussion in Model)
+
+        <div class="col-md-4 text-end">
+            <a href="/Inventories/Details/@inventory.Id" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Inventory
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+
+            <!-- ”€”€ Create / Add Discussion Section ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€ -->
+            @if (canAdd)
             {
-                <div class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="mb-1">@discussion.User?.UserName</h6>
-                            <p class="mb-0">@Html.Raw(MarkdownHelper.ToHtml(discussion.Content))</p>
-                        </div>
-                        <small class="text-muted">@discussion.CreatedAt.ToString("MMM dd, HH:mm")</small>
+                <div class="card mb-4 border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> Share Your Thoughts</h5>
+                    </div>
+                    <div class="card-body">
+
+                        @if (TempData["DiscussionSuccess"] != null)
+                        {
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="bi bi-check-circle"></i> @TempData["DiscussionSuccess"]
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        }
+
+                        @if (TempData["DiscussionError"] != null)
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-circle"></i> @TempData["DiscussionError"]
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        }
+
+                        <form asp-controller="Inventories" asp-action="PostDiscussion" method="post"
+                              class="needs-validation" novalidate>
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="inventoryId" value="@inventory.Id" />
+
+                            <div class="form-group mb-3">
+                                <label for="discussionContent" class="form-label">Your Comment</label>
+                                <textarea id="discussionContent"
+                                          name="content"
+                                          class="form-control"
+                                          placeholder="Share your thoughts, feedback, or questions about this inventory. Markdown is supported!"
+                                          rows="4"
+                                          required
+                                          maxlength="5000"></textarea>
+                                <small class="text-muted d-block mt-1">
+                                    <strong>Tips:</strong> Use **bold**, *italic*, `code`, and more markdown formatting. Max 5000 characters.
+                                </small>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="text-muted"><small id="charCount">0</small>/5000 characters</span>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="postDiscussionBtn">
+                                    <i class="bi bi-send"></i> Post Comment
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             }
+            else
+            {
+                @* Show TempData errors/success even when canAdd is false (e.g. after a failed delete attempt) *@
+                @if (TempData["DiscussionSuccess"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                        <i class="bi bi-check-circle"></i> @TempData["DiscussionSuccess"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (TempData["DiscussionError"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                        <i class="bi bi-exclamation-circle"></i> @TempData["DiscussionError"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Want to participate?</strong> Please <a href="/Account/Login" class="alert-link">login</a>
+                    to add your thoughts to the discussion.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <!-- ”€”€ Discussion Feed ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€ -->
+            @if (Model.Any())
+            {
+                <div class="discussion-posts">
+                    @foreach (var d in Model)
+                    {
+                        @* Only the post author or admin may delete *@
+                        var canDelete = !string.IsNullOrEmpty(userId) &&
+                                        (d.UserId == userId || isAdmin);
+
+                        <div class="card mb-3 discussion-card">
+                            <div class="card-body">
+
+                                <!-- Post Header -->
+                                <div class="d-flex align-items-start mb-3 pb-2 border-bottom">
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-subtitle mb-0">
+                                            <strong>
+                                                <a href="/Account/Profile/@d.User?.Id" class="text-decoration-none">
+                                                    @d.User?.UserName
+                                                </a>
+                                            </strong>
+                                        </h6>
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock"></i>
+                                            @{
+                                                var timeSpan = DateTime.UtcNow - d.CreatedAt;
+                                                var timeAgo = timeSpan.TotalSeconds < 60 ? "just now" :
+                                                               timeSpan.TotalMinutes < 60 ? $"{(int)timeSpan.TotalMinutes}m ago" :
+                                                               timeSpan.TotalHours < 24 ? $"{(int)timeSpan.TotalHours}h ago" :
+                                                               timeSpan.TotalDays < 7 ? $"{(int)timeSpan.TotalDays}d ago" :
+                                                               d.CreatedAt.ToString("MMM dd, yyyy HH:mm");
+                                            }
+                                            @timeAgo
+                                        </small>
+                                      
+                                    </div>
+
+                                    <!-- Delete button (server-side POST form, no JS required) -->
+                                    @if (canDelete)
+                                    {
+                                        <form asp-controller="Inventories"
+                                              asp-action="DeleteDiscussion"
+                                              method="post"
+                                              class="ms-2"
+                                              onsubmit="return confirm('Delete this comment?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@d.Id" />
+                                            <input type="hidden" name="inventoryId" value="@inventory.Id" />
+                                            <input type="hidden" name="returnPage" value="@currentPage" />
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="Delete comment">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+
+                                <!-- Post Content -->
+                                <div class="discussion-content mb-2">
+                                    <p class="mb-0">@Html.Raw(MarkdownHelper.ToHtml(d.Content))</p>
+                                </div>
+
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- ”€”€ Pagination ”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€”€ -->
+                @if (totalPages > 1)
+                {
+                    <nav class="mt-4 mb-4" aria-label="Discussion pagination">
+                        <ul class="pagination pagination-lg justify-content-center">
+
+                            <!-- First -->
+                            @if (currentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="@Url.Action("Discussion", "Inventories", new { id = inventory.Id, page = 1 })"
+                                       title="First page">
+                                        <i class="bi bi-chevron-bar-left"></i> First
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="bi bi-chevron-bar-left"></i> First</span>
+                                </li>
+                            }
+
+                            <!-- Prev -->
+                            @if (currentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="@Url.Action("Discussion", "Inventories", new { id = inventory.Id, page = currentPage - 1 })"
+                                       title="Previous page">
+                                        &larr;<i class="bi bi-chevron-left"></i>
+
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">&larr;<i class="bi bi-chevron-left"></i></span>
+                                </li>
+                            }
+
+                            <!-- Page Numbers (window of 5) -->
+                            @{
+                                int startPage = Math.Max(1, currentPage - 2);
+                                int endPage = Math.Min(totalPages, currentPage + 2);
+
+                                if (startPage > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Discussion", "Inventories", new { id = inventory.Id, page = 1 })">1</a>
+                                    </li>
+                                    if (startPage > 2)
+                                    {
+                                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                                    }
+                                }
+
+                                for (int i = startPage; i <= endPage; i++)
+                                {
+                                    if (i == currentPage)
+                                    {
+                                        <li class="page-item active" aria-current="page">
+                                            <span class="page-link">@i</span>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("Discussion", "Inventories", new { id = inventory.Id, page = i })">@i</a>
+                                        </li>
+                                    }
+                                }
+
+                                if (endPage < totalPages)
+                                {
+                                    if (endPage < totalPages - 1)
+                                    {
+                                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                                    }
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Discussion", "Inventories", new { id = inventory.Id, page = totalPages })">@totalPages</a>
+                                    </li>
+                                }
+                            }
+
+                            <!-- Next -->
+                            @if (currentPage < totalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="@Url.Action("Discussion", "Inventories", new { id = inventory.Id, page = currentPage + 1 })"
+                                       title="Next page">
+                                        <i class="bi bi-chevron-right"></i>&rarr;
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="bi bi-chevron-right"></i></span>&rarr;
+                                </li>
+                            }
+
+                            <!-- Last -->
+                            @if (currentPage < totalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="@Url.Action("Discussion", "Inventories", new { id = inventory.Id, page = totalPages })"
+                                       title="Last page">
+                                        Last <i class="bi bi-chevron-bar-right"></i>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">Last <i class="bi bi-chevron-bar-right"></i></span>
+                                </li>
+                            }
+
+                        </ul>
+                    </nav>
+
+                    <div class="text-center mb-4">
+                        <small class="text-muted">
+                            Showing page <strong>@currentPage</strong> of <strong>@totalPages</strong>
+                            (@totalDiscussions total @(totalDiscussions != 1 ? "posts" : "post"))
+                        </small>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info text-center py-5" role="alert">
+                    <i class="bi bi-chat-left-dots" style="font-size: 3rem; opacity: 0.5;"></i>
+                    <h5 class="mt-3">No discussions yet</h5>
+                    <p class="text-muted mb-0">
+                        @if (canAdd)
+                        {
+                            <span>Be the first to share your thoughts about this inventory!</span>
+                        }
+                        else
+                        {
+                            <span>Login to be the first to start a discussion.</span>
+                        }
+                    </p>
+                </div>
+            }
+
         </div>
-    }
+    </div>
 </div>
+
+<link rel="stylesheet" href="~/css/discussion.css" />
 
 @section Scripts {
     <script>
-        const inventoryId = @inventory.Id;
+        $(document).ready(function () {
+            const textarea = $('#discussionContent');
 
-        document.getElementById('postDiscussionBtn')?.addEventListener('click', async () => {
-            const content = document.getElementById('discussionContent').value;
-            if (!content.trim()) return;
+            textarea.on('input', function () {
+                const count = $(this).val().length;
+                $('#charCount').text(count);
+                $('#charCount').css('color', count > 4500 ? '#ff6b6b' : 'inherit');
+            });
 
-            try {
-                const response = await fetch('/api/discussions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ inventoryId, content })
-                });
-
-                if (response.ok) {
-                    document.getElementById('discussionContent').value = '';
-                    // Reload discussions
-                    location.reload();
-                } else {
-                    alert('Error posting discussion');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error posting discussion');
+            const form = document.querySelector('.needs-validation');
+            if (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
             }
         });
-
-        // Auto-refresh discussions every 5 seconds
-        setInterval(() => {
-            // Fetch and update in real implementation
-        }, 5000);
     </script>
 }
+
+
+

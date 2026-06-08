@@ -1,0 +1,147 @@
+﻿@model Inventory
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+        <h5 class="card-title mb-4">Access Control</h5>
+
+        <div class="mb-4">
+            <h6 class="mb-3">Visibility</h6>
+            <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="visibility" id="visibilityPublic" value="Public" checked="@(Model.Visibility == VisibilityType.Public)">
+                <label class="btn btn-outline-secondary" for="visibilityPublic">
+                    <i class="bi bi-globe"></i> Public (Anyone can view)
+                </label>
+
+                <input type="radio" class="btn-check" name="visibility" id="visibilityPrivate" value="Private" checked="@(Model.Visibility == VisibilityType.Private)">
+                <label class="btn btn-outline-secondary" for="visibilityPrivate">
+                    <i class="bi bi-lock"></i> Private (Only invited users)
+                </label>
+            </div>
+            <small class="text-muted d-block mt-2">
+                <i class="bi bi-info-circle"></i>
+                Public inventories are discoverable; Private inventories are only visible to the creator and invited users.
+            </small>
+        </div>
+
+        <hr>
+
+        @if (Model.Visibility == VisibilityType.Private)
+        {
+            <div class="mb-4">
+                <h6 class="mb-3">Grant Access To Users</h6>
+                <div class="input-group mb-3">
+                    <input type="text" id="userSearchInput" class="form-control" placeholder="Search users by name or email..." autocomplete="off">
+                    <button type="button" class="btn btn-outline-secondary" id="grantAccessBtn">
+                        <i class="bi bi-person-plus"></i> Add User
+                    </button>
+                </div>
+                <small class="text-muted d-block mb-3">
+                    Start typing to search for registered users
+                </small>
+
+                <div id="userSearchResults" class="list-group mb-3" style="display: none; max-height: 200px; overflow-y: auto;">
+                    <!-- Results appear here -->
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="mb-3">Current Access</h6>
+                @if (Model.AccessControls.Any())
+                {
+                    <div class="list-group">
+                        @foreach (var access in Model.AccessControls)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center" data-access-id="@access.Id">
+                                <div>
+                                    <div class="fw-500">@access.User?.UserName</div>
+                                    <small class="text-muted">@access.User?.Email</small>
+                                </div>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <span class="badge bg-info">Viewer</span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger removeAccessBtn" data-access-id="@access.Id">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info small">
+                        <i class="bi bi-info-circle"></i>
+                        No users have been granted access yet. Use the form above to invite users.
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info small">
+                <i class="bi bi-info-circle"></i>
+                This inventory is public. Anyone can view it. To restrict access, switch to Private mode above.
+            </div>
+        }
+
+        <hr>
+
+        <button type="button" class="btn btn-success" id="saveAccessBtn">
+            <i class="bi bi-check-lg"></i> Save Changes
+        </button>
+    </div>
+</div>
+
+<script>
+    const inventoryId = @Model.Id;
+
+    document.querySelectorAll('input[name="visibility"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            location.reload();
+        });
+    });
+
+    document.getElementById('userSearchInput')?.addEventListener('input', async (e) => {
+        const query = e.target.value.trim();
+        const resultsContainer = document.getElementById('userSearchResults');
+
+        if (query.length < 2) {
+            resultsContainer.style.display = 'none';
+            return;
+        }
+
+        try {
+            resultsContainer.style.display = 'block';
+            resultsContainer.innerHTML = '<div class="list-group-item text-muted small">User search API needed</div>';
+        } catch (error) {
+            console.error('Error searching users:', error);
+        }
+    });
+
+    document.getElementById('grantAccessBtn')?.addEventListener('click', () => {
+        alert('Grant access functionality coming soon');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.removeAccessBtn')) {
+            if (confirm('Remove access for this user?')) {
+                const accessId = e.target.closest('.removeAccessBtn').dataset.accessId;
+                e.target.closest('.list-group-item').remove();
+            }
+        }
+    });
+
+    document.getElementById('saveAccessBtn')?.addEventListener('click', async () => {
+        const visibility = document.querySelector('input[name="visibility"]:checked')?.value;
+
+        if (visibility === 'Public') {
+            console.log('Updating to public');
+        } else {
+            console.log('Keeping private');
+        }
+
+        alert('Access settings saved!');
+    });
+</script>
+
+<link rel="stylesheet" href="~/css/settings.css" />
+

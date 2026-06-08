@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
 using Inventory_Management_System.Models.DTOs;
-using Inventory_Management_System.Services;
+using Inventory_Management_System.Services.Interfaces;
 using System.Text.Json;
 
 namespace Inventory_Management_System.Controllers;
@@ -54,14 +54,19 @@ public class ItemsController : ControllerBase
         if (inventory == null)
             return NotFound("Inventory not found");
 
-        // Generate custom ID
-        List<CustomIdElement> format = new();
-        if (!string.IsNullOrEmpty(inventory.CustomIdFormat))
+        if (string.IsNullOrEmpty(inventory.CustomIdFormat))
         {
-            format = JsonSerializer.Deserialize<List<CustomIdElement>>(inventory.CustomIdFormat) ?? new();
+            return BadRequest(new { error = "CustomIdFormat not configured. Please set a Custom ID Format in Settings before creating items." });
         }
 
-        var customId = await _itemService.GenerateUniqueCustomIdAsync(dto.InventoryId, format);
+        List<CustomIdElement> format = JsonSerializer.Deserialize<List<CustomIdElement>>(inventory.CustomIdFormat) ?? new();
+
+        if (format.Count == 0)
+        {
+            return BadRequest(new { error = "CustomIdFormat is empty. Please configure at least one element for the Custom ID Format in Settings." });
+        }
+
+        string customId = await _itemService.GenerateUniqueCustomIdAsync(dto.InventoryId, format);
 
         var item = new Item
         {
@@ -86,7 +91,7 @@ public class ItemsController : ControllerBase
         };
 
         await _itemService.CreateItemAsync(item);
-        return CreatedAtAction(nameof(GetItem), new { id = item.Id }, item);
+        return Ok(new { success = true, id = item.Id });
     }
 
     [HttpGet("{id}")]
@@ -97,14 +102,34 @@ public class ItemsController : ControllerBase
         if (item == null)
             return NotFound();
 
-        // Check access to inventory
         var canAccess = await _inventoryService.CanAccessInventoryAsync(item.InventoryId, 
             User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "");
 
         if (!canAccess)
             return Forbid();
 
-        return Ok(item);
+        var dto = new UpdateItemDto
+        {
+            Id = item.Id,
+            CustomString1Value = item.CustomString1Value,
+            CustomString2Value = item.CustomString2Value,
+            CustomString3Value = item.CustomString3Value,
+            CustomText1Value = item.CustomText1Value,
+            CustomText2Value = item.CustomText2Value,
+            CustomText3Value = item.CustomText3Value,
+            CustomNumber1Value = item.CustomNumber1Value,
+            CustomNumber2Value = item.CustomNumber2Value,
+            CustomNumber3Value = item.CustomNumber3Value,
+            CustomBool1Value = item.CustomBool1Value,
+            CustomBool2Value = item.CustomBool2Value,
+            CustomBool3Value = item.CustomBool3Value,
+            CustomLink1Value = item.CustomLink1Value,
+            CustomLink2Value = item.CustomLink2Value,
+            CustomLink3Value = item.CustomLink3Value,
+            Version = item.Version
+        };
+
+        return Ok(dto);
     }
 
     [HttpPut("{id}")]
@@ -185,7 +210,6 @@ public class ItemsController : ControllerBase
         if (item == null)
             return NotFound();
 
-        // Check if already liked
         var existingLike = _context.ItemLikes
             .FirstOrDefault(il => il.ItemId == itemId && il.UserId == userId);
 
@@ -219,9 +243,10 @@ public class ItemsController : ControllerBase
             .Count();
 
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var isLiked = !string.IsNullOrEmpty(userId) && _context.ItemLikes
+        var userLiked = !string.IsNullOrEmpty(userId) && _context.ItemLikes
             .Any(il => il.ItemId == itemId && il.UserId == userId);
 
-        return Ok(new { count = likeCount, isLiked });
+        return Ok(new { count = likeCount, isLiked = userLiked, userLiked = userLiked });
     }
 }
+

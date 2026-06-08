@@ -185,6 +185,8 @@ namespace Inventory_Management_System.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("InventoryId", "CreatedAt");
+
                     b.ToTable("Discussions");
                 });
 

@@ -1,20 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
-
-namespace Inventory_Management_System.Services;
-
-public interface IItemService
-{
-    Task<Item?> GetItemByIdAsync(int id);
-    Task<List<Item>> GetInventoryItemsAsync(int inventoryId, int page = 1, int pageSize = 20);
-    Task<int> GetInventoryItemsCountAsync(int inventoryId);
-    Task<Item> CreateItemAsync(Item item);
-    Task<Item> UpdateItemAsync(Item item);
-    Task DeleteItemAsync(int id);
-    Task<List<Item>> SearchItemsAsync(string searchTerm, int inventoryId);
-    Task<string> GenerateUniqueCustomIdAsync(int inventoryId, List<CustomIdElement> format);
-}
+namespace Inventory_Management_System.Services.Interfaces;
 
 public class ItemService : IItemService
 {
@@ -36,12 +23,15 @@ public class ItemService : IItemService
             .FirstOrDefaultAsync(i => i.Id == id);
     }
 
-    public async Task<List<Item>> GetInventoryItemsAsync(int inventoryId, int page = 1, int pageSize = 20)
+    public async Task<List<Item>> GetInventoryItemsAsync(int inventoryId, int page = 1, int pageSize = 5)
     {
         return await _context.Items
             .AsNoTracking()
             .Where(i => i.InventoryId == inventoryId)
             .Include(i => i.CreatedBy)
+            .Include(i => i.Likes)
+            .Include(i => i.Inventory)
+                .ThenInclude(inv => inv!.CustomFields)
             .OrderByDescending(i => i.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -95,16 +85,16 @@ public class ItemService : IItemService
         return await _context.Items
             .AsNoTracking()
             .Where(i => i.InventoryId == inventoryId &&
-                       (i.CustomId.ToLower().Contains(term) ||
-                        i.CustomString1Value!.ToLower().Contains(term) ||
-                        i.CustomString2Value!.ToLower().Contains(term) ||
-                        i.CustomString3Value!.ToLower().Contains(term) ||
-                        i.CustomText1Value!.ToLower().Contains(term) ||
-                        i.CustomText2Value!.ToLower().Contains(term) ||
-                        i.CustomText3Value!.ToLower().Contains(term) ||
-                        i.CustomLink1Value!.ToLower().Contains(term) ||
-                        i.CustomLink2Value!.ToLower().Contains(term) ||
-                        i.CustomLink3Value!.ToLower().Contains(term)))
+                       ((i.CustomId ?? string.Empty).ToLower().Contains(term) ||
+                        (i.CustomString1Value ?? string.Empty).ToLower().Contains(term) ||
+                        (i.CustomString2Value ?? string.Empty).ToLower().Contains(term) ||
+                        (i.CustomString3Value ?? string.Empty).ToLower().Contains(term) ||
+                        (i.CustomText1Value ?? string.Empty).ToLower().Contains(term) ||
+                        (i.CustomText2Value ?? string.Empty).ToLower().Contains(term) ||
+                        (i.CustomText3Value ?? string.Empty).ToLower().Contains(term) ||
+                        (i.CustomLink1Value ?? string.Empty).ToLower().Contains(term) ||
+                        (i.CustomLink2Value ?? string.Empty).ToLower().Contains(term) ||
+                        (i.CustomLink3Value ?? string.Empty).ToLower().Contains(term)))
             .OrderByDescending(i => i.CreatedAt)
             .Take(50)
             .ToListAsync();
@@ -112,6 +102,9 @@ public class ItemService : IItemService
 
     public async Task<string> GenerateUniqueCustomIdAsync(int inventoryId, List<CustomIdElement> format)
     {
+        if (format == null || format.Count == 0)
+            return string.Empty;
+
         string customId;
         int attempts = 0;
         const int maxAttempts = 10;
@@ -131,3 +124,4 @@ public class ItemService : IItemService
         throw new InvalidOperationException("Unable to generate unique custom ID after maximum attempts.");
     }
 }
+

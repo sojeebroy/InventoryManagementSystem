@@ -1,0 +1,40 @@
+﻿@* Theme Toggle Component *@
+<button id="themeToggle" 
+        class="btn btn-sm btn-outline-secondary theme-toggle-btn" 
+        type="button"
+        title="Toggle theme"
+        data-bs-toggle="tooltip"
+        data-bs-title="Switch theme">
+    <span class="ms-1">🌙</span>
+</button>
+
+<style>
+    .theme-toggle-btn {
+        border: 1px solid #dee2e6;
+        padding: 0.375rem 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .theme-toggle-btn:hover {
+        background-color: #f8f9fa;
+        border-color: #adb5bd;
+    }
+
+    .theme-toggle-btn:focus {
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    body.dark-theme .theme-toggle-btn span {
+        content: '☀️';
+    }
+
+    body.dark-theme .theme-toggle-btn::after {
+        content: '☀️';
+    }
+</style>
+

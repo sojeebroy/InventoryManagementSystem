@@ -1,13 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
-
-namespace Inventory_Management_System.Services;
-
-public interface IStatisticsService
-{
-    Task<InventoryStatistics> GetInventoryStatisticsAsync(int inventoryId);
-}
+namespace Inventory_Management_System.Services.Interfaces;
 
 public class StatisticsService : IStatisticsService
 {
@@ -22,24 +16,19 @@ public class StatisticsService : IStatisticsService
     {
         var stats = new InventoryStatistics { InventoryId = inventoryId };
 
-        // Total items
         stats.TotalItems = await _context.Items
             .Where(i => i.InventoryId == inventoryId)
             .CountAsync();
 
-        // Get all items for custom field analysis
         var items = await _context.Items
             .AsNoTracking()
             .Where(i => i.InventoryId == inventoryId)
             .ToListAsync();
 
-        // Numeric field statistics
         CalculateNumericStatistics(stats, items);
 
-        // String field statistics
         CalculateStringStatistics(stats, items);
 
-        // Get custom fields for context
         stats.CustomFields = await _context.CustomFields
             .AsNoTracking()
             .Where(cf => cf.InventoryId == inventoryId)
@@ -50,7 +39,6 @@ public class StatisticsService : IStatisticsService
 
     private void CalculateNumericStatistics(InventoryStatistics stats, List<Item> items)
     {
-        // Numeric field 1
         var numeric1Values = items
             .Where(i => i.CustomNumber1Value.HasValue)
             .Select(i => i.CustomNumber1Value.Value)
@@ -67,7 +55,6 @@ public class StatisticsService : IStatisticsService
             };
         }
 
-        // Numeric field 2
         var numeric2Values = items
             .Where(i => i.CustomNumber2Value.HasValue)
             .Select(i => i.CustomNumber2Value.Value)
@@ -84,7 +71,6 @@ public class StatisticsService : IStatisticsService
             };
         }
 
-        // Numeric field 3
         var numeric3Values = items
             .Where(i => i.CustomNumber3Value.HasValue)
             .Select(i => i.CustomNumber3Value.Value)
@@ -104,7 +90,6 @@ public class StatisticsService : IStatisticsService
 
     private void CalculateStringStatistics(InventoryStatistics stats, List<Item> items)
     {
-        // String field 1
         var string1Values = items
             .Where(i => !string.IsNullOrEmpty(i.CustomString1Value))
             .GroupBy(i => i.CustomString1Value)
@@ -116,7 +101,6 @@ public class StatisticsService : IStatisticsService
         if (string1Values.Any())
             stats.String1Stats = string1Values;
 
-        // String field 2
         var string2Values = items
             .Where(i => !string.IsNullOrEmpty(i.CustomString2Value))
             .GroupBy(i => i.CustomString2Value)
@@ -128,7 +112,6 @@ public class StatisticsService : IStatisticsService
         if (string2Values.Any())
             stats.String2Stats = string2Values;
 
-        // String field 3
         var string3Values = items
             .Where(i => !string.IsNullOrEmpty(i.CustomString3Value))
             .GroupBy(i => i.CustomString3Value)
@@ -171,3 +154,5 @@ public class StringFieldFrequency
     public string Value { get; set; } = string.Empty;
     public int Count { get; set; }
 }
+
+

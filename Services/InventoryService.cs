@@ -1,20 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
-
-namespace Inventory_Management_System.Services;
-
-public interface IInventoryService
-{
-    Task<Inventory?> GetInventoryByIdAsync(int id);
-    Task<List<Inventory>> GetAccessibleInventoriesAsync(string userId);
-    Task<List<Inventory>> GetOwnedInventoriesAsync(string userId);
-    Task<Inventory> CreateInventoryAsync(Inventory inventory);
-    Task<Inventory> UpdateInventoryAsync(Inventory inventory);
-    Task DeleteInventoryAsync(int id);
-    Task<bool> CanAccessInventoryAsync(int inventoryId, string userId, AccessLevel requiredLevel = AccessLevel.View);
-    Task<List<Inventory>> SearchInventoriesAsync(string searchTerm);
-}
+namespace Inventory_Management_System.Services.Interfaces;
 
 public class InventoryService : IInventoryService
 {
@@ -29,6 +16,17 @@ public class InventoryService : IInventoryService
     {
         return await _context.Inventories
             .AsNoTracking()
+            .Include(i => i.Owner)
+            .Include(i => i.Tags)
+            .Include(i => i.AccessControls)
+            .Include(i => i.CustomFields.OrderBy(cf => cf.DisplayOrder))
+            .Include(i => i.Items)
+            .FirstOrDefaultAsync(i => i.Id == id);
+    }
+
+    public async Task<Inventory?> GetInventoryByIdForUpdateAsync(int id)
+    {
+        return await _context.Inventories
             .Include(i => i.Owner)
             .Include(i => i.Tags)
             .Include(i => i.AccessControls)
@@ -101,15 +99,12 @@ public class InventoryService : IInventoryService
         if (inventory == null)
             return false;
 
-        // Owner has full access
         if (inventory.OwnerId == userId)
             return true;
 
-        // Public inventories allow viewing
         if (inventory.Visibility == VisibilityType.Public && requiredLevel == AccessLevel.View)
             return true;
 
-        // Check specific access grant
         var access = inventory.AccessControls.FirstOrDefault(ac => ac.UserId == userId);
         if (access == null)
             return false;
@@ -134,4 +129,24 @@ public class InventoryService : IInventoryService
             .Take(50)
             .ToListAsync();
     }
+
+    public async Task AddTagAsync(InventoryTag tag)
+    {
+        _context.InventoryTags.Add(tag);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteInventoryTagsAsync(int inventoryId)
+    {
+        var tags = await _context.InventoryTags
+            .Where(t => t.InventoryId == inventoryId)
+            .ToListAsync();
+
+        if (tags.Any())
+        {
+            _context.InventoryTags.RemoveRange(tags);
+            await _context.SaveChangesAsync();
+        }
+    }
 }
+

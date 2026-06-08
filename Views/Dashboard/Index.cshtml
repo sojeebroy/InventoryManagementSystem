@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Dashboard";
     var ownedInventories = (List<Inventory>)ViewBag.OwnedInventories;
     var accessibleInventories = (List<Inventory>)ViewBag.AccessibleInventories;
@@ -30,21 +30,40 @@
         }
         else
         {
+            <!-- Bulk Actions Toolbar for My Inventories -->
+            <div class="card mb-3" id="ownedToolbar" style="display: none; background-color: #f0f7ff; border-left: 4px solid #0d6efd;">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <span id="ownedSelectedCount" style="font-weight: 600; color: #0d6efd;"></span>
+                    </div>
+                    <div class="btn-group gap-2" role="group">
+                        <a href="#" class="btn btn-sm btn-info" id="ownedViewBtn">🔐 View</a>
+                        <a href="#" class="btn btn-sm btn-secondary" id="ownedEditBtn">œ Edit</a>
+                        <a href="#" class="btn btn-sm btn-warning" id="ownedSettingsBtn">š™ Settings</a>
+                    </div>
+                </div>
+            </div>
+
             <div class="table-responsive-custom">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0" id="ownedTable">
                     <thead class="table-light">
                         <tr>
+                            <th style="width: 3%">
+                                <input type="checkbox" id="ownedSelectAllCheckbox" class="form-check-input" onchange="toggleSelectAll(this, 'owned')" style="display: none;">
+                            </th>
                             <th>Title</th>
                             <th>Items</th>
                             <th>Visibility</th>
                             <th>Created</th>
-                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var inventory in ownedInventories)
                         {
                             <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input owned-checkbox" value="@inventory.Id" onchange="updateOwnedToolbar()">
+                                </td>
                                 <td>
                                     <strong>@inventory.Title</strong>
                                 </td>
@@ -64,16 +83,61 @@
                                 <td>
                                     <small>@inventory.CreatedAt.ToString("MMM dd, yyyy")</small>
                                 </td>
-                                <td class="text-end">
-                                    <a href="/Inventories/Details/@inventory.Id" class="btn btn-sm btn-outline-primary">View</a>
-                                    <a href="/Inventories/Edit/@inventory.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                    <a href="/Inventories/Settings/@inventory.Id" class="btn btn-sm btn-outline-info">Settings</a>
-                                </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination for Owned Inventories -->
+            @if (ViewBag.OwnedTotalPages > 1)
+            {
+                <nav class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(ViewBag.OwnedCurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=1&accessiblePage=@ViewBag.AccessibleCurrentPage&sortBy=@ViewBag.CurrentSort">First</a>
+                        </li>
+                        <li class="page-item @(ViewBag.OwnedCurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@(ViewBag.OwnedCurrentPage - 1)&accessiblePage=@ViewBag.AccessibleCurrentPage&sortBy=@ViewBag.CurrentSort">Previous</a>
+                        </li>
+
+                        @for (int i = 1; i <= ViewBag.OwnedTotalPages; i++)
+                        {
+                            if (i == ViewBag.OwnedCurrentPage)
+                            {
+                                <li class="page-item active">
+                                    <span class="page-link">@i</span>
+                                </li>
+                            }
+                            else if (i <= 3 || i >= ViewBag.OwnedTotalPages - 2 || (i >= ViewBag.OwnedCurrentPage - 2 && i <= ViewBag.OwnedCurrentPage + 2))
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="?ownedPage=@i&accessiblePage=@ViewBag.AccessibleCurrentPage&sortBy=@ViewBag.CurrentSort">@i</a>
+                                </li>
+                            }
+                            else if (i == 4 || i == ViewBag.OwnedTotalPages - 3)
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            }
+                        }
+
+                        <li class="page-item @(ViewBag.OwnedCurrentPage == ViewBag.OwnedTotalPages ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@(ViewBag.OwnedCurrentPage + 1)&accessiblePage=@ViewBag.AccessibleCurrentPage&sortBy=@ViewBag.CurrentSort">Next</a>
+                        </li>
+                        <li class="page-item @(ViewBag.OwnedCurrentPage == ViewBag.OwnedTotalPages ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@ViewBag.OwnedTotalPages&accessiblePage=@ViewBag.AccessibleCurrentPage&sortBy=@ViewBag.CurrentSort">Last</a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="alert alert-info mt-2">
+                    <strong>Total:</strong> @ViewBag.OwnedTotalCount inventories | 
+                    <strong>Page:</strong> @ViewBag.OwnedCurrentPage of @ViewBag.OwnedTotalPages | 
+                    <strong>Per Page:</strong> @ViewBag.OwnedPageSize
+                </div>
+            }
         }
     </div>
 
@@ -91,21 +155,38 @@
         }
         else
         {
+            <!-- Bulk Actions Toolbar for Accessible Inventories -->
+            <div class="card mb-3" id="accessibleToolbar" style="display: none; background-color: #f0f7ff; border-left: 4px solid #0d6efd;">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <span id="accessibleSelectedCount" style="font-weight: 600; color: #0d6efd;"></span>
+                    </div>
+                    <div class="btn-group gap-2" role="group">
+                        <a href="#" class="btn btn-sm btn-info" id="accessibleViewBtn">🔐 View</a>
+                    </div>
+                </div>
+            </div>
+
             <div class="table-responsive-custom">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0" id="accessibleTable">
                     <thead class="table-light">
                         <tr>
+                            <th style="width: 3%">
+                                <input type="checkbox" id="accessibleSelectAllCheckbox" class="form-check-input" onchange="toggleSelectAll(this, 'accessible')" style="display: none;">
+                            </th>
                             <th>Title</th>
                             <th>Owner</th>
                             <th>Items</th>
                             <th>Created</th>
-                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var inventory in accessibleInventories)
                         {
                             <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input accessible-checkbox" value="@inventory.Id" onchange="updateAccessibleToolbar()">
+                                </td>
                                 <td>
                                     <strong>@inventory.Title</strong>
                                 </td>
@@ -118,14 +199,165 @@
                                 <td>
                                     <small>@inventory.CreatedAt.ToString("MMM dd, yyyy")</small>
                                 </td>
-                                <td class="text-end">
-                                    <a href="/Inventories/Details/@inventory.Id" class="btn btn-sm btn-outline-primary">View</a>
-                                </td>
+
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination for Accessible Inventories -->
+            @if (ViewBag.AccessibleTotalPages > 1)
+            {
+                <nav class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(ViewBag.AccessibleCurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@ViewBag.OwnedCurrentPage&accessiblePage=1&sortBy=@ViewBag.CurrentSort">First</a>
+                        </li>
+                        <li class="page-item @(ViewBag.AccessibleCurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@ViewBag.OwnedCurrentPage&accessiblePage=@(ViewBag.AccessibleCurrentPage - 1)&sortBy=@ViewBag.CurrentSort">Previous</a>
+                        </li>
+
+                        @for (int i = 1; i <= ViewBag.AccessibleTotalPages; i++)
+                        {
+                            if (i == ViewBag.AccessibleCurrentPage)
+                            {
+                                <li class="page-item active">
+                                    <span class="page-link">@i</span>
+                                </li>
+                            }
+                            else if (i <= 3 || i >= ViewBag.AccessibleTotalPages - 2 || (i >= ViewBag.AccessibleCurrentPage - 2 && i <= ViewBag.AccessibleCurrentPage + 2))
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="?ownedPage=@ViewBag.OwnedCurrentPage&accessiblePage=@i&sortBy=@ViewBag.CurrentSort">@i</a>
+                                </li>
+                            }
+                            else if (i == 4 || i == ViewBag.AccessibleTotalPages - 3)
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            }
+                        }
+
+                        <li class="page-item @(ViewBag.AccessibleCurrentPage == ViewBag.AccessibleTotalPages ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@ViewBag.OwnedCurrentPage&accessiblePage=@(ViewBag.AccessibleCurrentPage + 1)&sortBy=@ViewBag.CurrentSort">Next</a>
+                        </li>
+                        <li class="page-item @(ViewBag.AccessibleCurrentPage == ViewBag.AccessibleTotalPages ? "disabled" : "")">
+                            <a class="page-link" href="?ownedPage=@ViewBag.OwnedCurrentPage&accessiblePage=@ViewBag.AccessibleTotalPages&sortBy=@ViewBag.CurrentSort">Last</a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="alert alert-info mt-2">
+                    <strong>Total:</strong> @ViewBag.AccessibleTotalCount inventories | 
+                    <strong>Page:</strong> @ViewBag.AccessibleCurrentPage of @ViewBag.AccessibleTotalPages | 
+                    <strong>Per Page:</strong> @ViewBag.AccessiblePageSize
+                </div>
+            }
         }
     </div>
 </div>
+
+<style>
+    .form-check-input {
+        cursor: pointer;
+    }
+
+    .gap-2 {
+        gap: 0.5rem;
+    }
+
+    .btn-group {
+        display: flex;
+    }
+</style>
+
+<script>
+    function updateOwnedToolbar() {
+        const checkboxes = document.querySelectorAll('.owned-checkbox:checked');
+        const toolbar = document.getElementById('ownedToolbar');
+        const selectedCount = document.getElementById('ownedSelectedCount');
+
+        if (checkboxes.length > 0) {
+            toolbar.style.display = 'block';
+            selectedCount.textContent = `1 inventory selected`;
+            updateOwnedActionButtons();
+        } else {
+            toolbar.style.display = 'none';
+        }
+    }
+
+    function updateOwnedActionButtons() {
+        const checkbox = document.querySelector('.owned-checkbox:checked');
+        if (!checkbox) return;
+
+        const inventoryId = checkbox.value;
+        const viewBtn = document.getElementById('ownedViewBtn');
+        const editBtn = document.getElementById('ownedEditBtn');
+        const settingsBtn = document.getElementById('ownedSettingsBtn');
+
+        viewBtn.href = `/Inventories/Details/${inventoryId}`;
+        editBtn.href = `/Inventories/Edit/${inventoryId}`;
+        settingsBtn.href = `/Inventories/Settings/${inventoryId}`;
+    }
+
+    function toggleSelectAll(checkbox, section) {
+        checkbox.checked = false;
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('owned-checkbox')) {
+            if (e.target.checked) {
+                const allCheckboxes = document.querySelectorAll('.owned-checkbox');
+                allCheckboxes.forEach(cb => {
+                    if (cb !== e.target) {
+                        cb.checked = false;
+                    }
+                });
+            }
+            updateOwnedToolbar();
+        }
+    });
+
+    function updateAccessibleToolbar() {
+        const checkboxes = document.querySelectorAll('.accessible-checkbox:checked');
+        const toolbar = document.getElementById('accessibleToolbar');
+        const selectedCount = document.getElementById('accessibleSelectedCount');
+
+        if (checkboxes.length > 0) {
+            toolbar.style.display = 'block';
+            selectedCount.textContent = `1 inventory selected`;
+            updateAccessibleActionButtons();
+        } else {
+            toolbar.style.display = 'none';
+        }
+    }
+
+    function updateAccessibleActionButtons() {
+        const checkbox = document.querySelector('.accessible-checkbox:checked');
+        if (!checkbox) return;
+
+        const inventoryId = checkbox.value;
+        const viewBtn = document.getElementById('accessibleViewBtn');
+
+        viewBtn.href = `/Inventories/Details/${inventoryId}`;
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('accessible-checkbox')) {
+            if (e.target.checked) {
+                const allCheckboxes = document.querySelectorAll('.accessible-checkbox');
+                allCheckboxes.forEach(cb => {
+                    if (cb !== e.target) {
+                        cb.checked = false;
+                    }
+                });
+            }
+            updateAccessibleToolbar();
+        }
+    });
+</script>
+
+
+

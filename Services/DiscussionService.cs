@@ -1,15 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Inventory_Management_System.Data;
 using Inventory_Management_System.Models;
-
-namespace Inventory_Management_System.Services;
-
-public interface IDiscussionService
-{
-    Task<List<Discussion>> GetInventoryDiscussionsAsync(int inventoryId);
-    Task<Discussion> AddDiscussionAsync(Discussion discussion);
-    Task DeleteDiscussionAsync(int id);
-}
+namespace Inventory_Management_System.Services.Interfaces;
 
 public class DiscussionService : IDiscussionService
 {
@@ -20,20 +12,42 @@ public class DiscussionService : IDiscussionService
         _context = context;
     }
 
-    public async Task<List<Discussion>> GetInventoryDiscussionsAsync(int inventoryId)
+    public async Task<List<Discussion>> GetInventoryDiscussionsAsync(int inventoryId, int page = 1, int pageSize = 5)
     {
         return await _context.Discussions
             .AsNoTracking()
             .Where(d => d.InventoryId == inventoryId)
             .Include(d => d.User)
+            .OrderByDescending(d => d.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<List<Discussion>> GetInventoryDiscussionsSinceAsync(int inventoryId, DateTime since)
+    {
+        return await _context.Discussions
+            .AsNoTracking()
+            .Where(d => d.InventoryId == inventoryId && d.CreatedAt > since)
+            .Include(d => d.User)
             .OrderBy(d => d.CreatedAt)
             .ToListAsync();
     }
 
+    public async Task<int> GetInventoryDiscussionsCountAsync(int inventoryId)
+    {
+        return await _context.Discussions
+            .Where(d => d.InventoryId == inventoryId)
+            .CountAsync();
+    }
+
     public async Task<Discussion> AddDiscussionAsync(Discussion discussion)
     {
+        discussion.CreatedAt = DateTime.UtcNow;
         _context.Discussions.Add(discussion);
         await _context.SaveChangesAsync();
+
+        await _context.Entry(discussion).Reference(d => d.User).LoadAsync();
         return discussion;
     }
 
@@ -46,4 +60,12 @@ public class DiscussionService : IDiscussionService
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task<Discussion?> GetDiscussionByIdAsync(int id)
+    {
+        return await _context.Discussions
+            .Include(d => d.User)
+            .FirstOrDefaultAsync(d => d.Id == id);
+    }
 }
+

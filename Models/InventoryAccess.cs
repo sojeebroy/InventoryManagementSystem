@@ -1,4 +1,4 @@
-namespace Inventory_Management_System.Models;
+﻿namespace Inventory_Management_System.Models;
 
 public class InventoryAccess
 {
@@ -18,3 +18,4 @@ public enum AccessLevel
     Edit,
     Admin
 }
+

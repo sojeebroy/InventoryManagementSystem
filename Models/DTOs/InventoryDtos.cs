@@ -1,13 +1,23 @@
-namespace Inventory_Management_System.Models.DTOs;
+﻿namespace Inventory_Management_System.Models.DTOs;
 
 public class CreateInventoryDto
 {
-    public string Title { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string? Category { get; set; }
-    public string? ImageUrl { get; set; }
-    public string VisibilityType { get; set; } = "Private";
-    public List<string> Tags { get; set; } = new();
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public string Category { get; set; }
+    public string VisibilityType { get; set; }
+    public string TagsInput { get; set; } = string.Empty;
+    public IFormFile? ImageFile { get; set; }
+
+    public List<string> Tags
+    {
+        get => string.IsNullOrWhiteSpace(TagsInput)
+            ? new()
+            : TagsInput.Split(',')
+                .Select(t => t.Trim())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToList();
+    }
 }
 
 public class UpdateInventoryDto
@@ -18,8 +28,19 @@ public class UpdateInventoryDto
     public string? Category { get; set; }
     public string? ImageUrl { get; set; }
     public string VisibilityType { get; set; } = "Private";
-    public List<string> Tags { get; set; } = new();
+    public string TagsInput { get; set; } = string.Empty;
+    public IFormFile? ImageFile { get; set; }
     public int Version { get; set; }
+
+    public List<string> Tags
+    {
+        get => string.IsNullOrWhiteSpace(TagsInput)
+            ? new()
+            : TagsInput.Split(',')
+                .Select(t => t.Trim())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToList();
+    }
 }
 
 public class InventoryAccessDto
@@ -80,3 +101,11 @@ public class ItemLikeDto
 {
     public int ItemId { get; set; }
 }
+
+public class FieldReorderDto
+{
+    public int Id { get; set; }
+    public int Order { get; set; }
+}
+
+

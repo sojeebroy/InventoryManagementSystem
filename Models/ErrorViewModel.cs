@@ -1,4 +1,4 @@
-namespace Inventory_Management_System.Models
+﻿namespace Inventory_Management_System.Models
 {
     public class ErrorViewModel
     {
@@ -7,3 +7,4 @@ namespace Inventory_Management_System.Models
         public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
     }
 }
+

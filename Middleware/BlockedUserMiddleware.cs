@@ -1,11 +1,8 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Inventory_Management_System.Models;
 
 namespace Inventory_Management_System.Middleware;
 
-/// <summary>
-/// Middleware to check if user is blocked and invalidate their session
-/// </summary>
 public class BlockedUserMiddleware
 {
     private readonly RequestDelegate _next;
@@ -27,10 +24,8 @@ public class BlockedUserMiddleware
             {
                 _logger.LogWarning("Blocked user {UserId} attempted to access {Path}", user.Id, context.Request.Path);
 
-                // Sign out the user
                 await signInManager.SignOutAsync();
 
-                // Redirect to blocked page
                 context.Response.Redirect("/Account/BlockedUser");
                 return;
             }
@@ -40,9 +35,6 @@ public class BlockedUserMiddleware
     }
 }
 
-/// <summary>
-/// Extension method for registering the middleware
-/// </summary>
 public static class BlockedUserMiddlewareExtensions
 {
     public static IApplicationBuilder UseBlockedUserMiddleware(this IApplicationBuilder builder)
@@ -50,3 +42,4 @@ public static class BlockedUserMiddlewareExtensions
         return builder.UseMiddleware<BlockedUserMiddleware>();
     }
 }
+

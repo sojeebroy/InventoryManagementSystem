@@ -1,0 +1,361 @@
+﻿@model Inventory
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+<script src="/_framework/aspnetcore-browser-refresh.js"></script>
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+        <h5 class="card-title mb-2">Custom ID Format</h5>
+        <p class="text-muted small mb-4">
+            Create a custom ID format for items in this inventory. You can combine fixed text, random numbers, dates, and sequences.
+        </p>
+
+        <div class="mb-4 p-3 bg-light rounded">
+            <label class="text-muted small mb-2" style="display: block;">Example:</label>
+            <code id="idPreview" style="font-size: 18px; font-weight: 500;">COMP-A7E3A-001-2025</code>
+        </div>
+
+        <div id="idElementsContainer" class="row gap-2 mb-4">
+            <!-- Elements rendered by JavaScript -->
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary" id="addIdElementBtn">
+                <i class="bi bi-plus-lg"></i> Add Element
+            </button>
+            <button type="button" class="btn btn-success" id="saveIdFormatBtn">
+                <i class="bi bi-check-lg"></i> Save Format
+            </button>
+        </div>
+
+        <hr class="my-4">
+
+        <h6 class="mb-3">Available Element Types Info</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <ul class="small text-muted">
+                    <li><strong>Fixed Text:</strong> Static text like "COMP-"</li>
+                    <li><strong>20-bit Hex (X5):</strong> 5 hex digits like A7E3A</li>
+                    <li><strong>32-bit Hex (X8):</strong> 8 hex digits like E74FA329</li>
+                    <li><strong>6-digit Decimal:</strong> Like 013245</li>
+                    <li><strong>Date/Time:</strong></li>
+
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul class="small text-muted">
+                    <li><strong>9-digit Decimal:</strong> Like 001234567</li>
+                    <li><strong>GUID:</strong> Standard UUID v4</li>
+                    <li><strong>Date/Time:</strong> Standard Format Year-Month-Day</li>
+                    <li><strong>Sequence:</strong> Auto-incrementing number</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add ID Element Modal -->
+<div class="modal fade" id="addIdElementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add ID Element</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addIdElementForm">
+                    <div class="mb-3">
+                        <label class="form-label" for="idElementTypeSelect">Element Type *</label>
+                        <select class="form-select" id="idElementTypeSelect" required>
+                            <option value="">Select type</option>
+                            <option value="FixedText">Fixed Text</option>
+                            <option value="RandomNumbers20Bit">20-bit Hex (X5)</option>
+                            <option value="RandomNumbers32Bit">32-bit Hex (X8)</option>
+                            <option value="RandomNumbers6Digit">6-digit Decimal</option>
+                            <option value="RandomNumbers9Digit">9-digit Decimal</option>
+                            <option value="Guid">GUID</option>
+                            <option value="DateTime">Date/Time</option>
+                            <option value="SequenceNumber">Sequence</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="valueContainer" style="display: none;">
+                        <label class="form-label" for="idElementValue">Value/Format</label>
+                        <input type="text" class="form-control" id="idElementValue" placeholder="Check Information From the Information Section ">
+                    </div>
+                    <div class="mb-3" id="lengthContainer" style="display: none;">
+                        <label class="form-label" for="idElementLength">Length</label>
+                        <input type="number" class="form-control" id="idElementLength" min="1" max="36" value="3">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmIdElementBtn">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<script>
+    const inventoryId = @System.Text.Json.JsonSerializer.Serialize(Model.Id);
+
+    let idElements = @Html.Raw(string.IsNullOrEmpty(Model.CustomIdFormat) ? "[]" : Model.CustomIdFormat);
+
+    if (!Array.isArray(idElements)) {
+        try {
+            idElements = JSON.parse(idElements || "[]");
+            if (!Array.isArray(idElements)) idElements = [];
+        } catch (e) {
+            console.error("Failed to parse CustomIdFormat from server:", e);
+            idElements = [];
+        }
+    }
+
+    const addIdElementModal = new bootstrap.Modal(document.getElementById('addIdElementModal'));
+
+    function renderIdElements() {
+        const container = document.getElementById('idElementsContainer');
+        container.innerHTML = '';
+        idElements.forEach((el, idx) => {
+            const preview = el.type === 'FixedText' || el.type === 0 ? `"${el.value}"` : `[${el.type}]`;
+            const badge = document.createElement('div');
+            badge.className = 'col-12 field-badge mb-2';
+            badge.innerHTML = `
+                <span class="badge bg-secondary d-flex justify-content-between align-items-center w-100"
+                    draggable="true"
+                    data-index="${idx}"
+                    style="font-size: 1.1rem; padding: 0.75rem 1.2rem;">
+                    <span>${preview}</span>
+                        <button type="button" class="btn-close btn-close-white" style="font-size: 0.8rem;"></button>
+                    </span>
+                </span>
+
+            `;
+            container.appendChild(badge);
+
+            badge.querySelector('button').addEventListener('click', () => {
+                idElements.splice(idx, 1);
+                renderIdElements();
+                updatePreview();
+            });
+        });
+        attachDragHandlers();
+        updatePreview();
+    }
+
+    let draggedBadge = null;
+    function attachDragHandlers() {
+        const container = document.getElementById('idElementsContainer');
+        container.querySelectorAll('.field-badge').forEach(b => {
+            const span = b.querySelector('span[draggable]');
+            if (!span) return;
+            span.addEventListener('dragstart', (ev) => {
+                draggedBadge = b;
+                b.style.opacity = '0.5';
+                ev.dataTransfer.effectAllowed = 'move';
+            });
+            span.addEventListener('dragend', () => {
+                if (draggedBadge) draggedBadge.style.opacity = '1';
+                draggedBadge = null;
+            });
+        });
+
+        const containerEl = document.getElementById('idElementsContainer');
+        containerEl.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const after = getDragAfterElement(containerEl, e.clientY);
+            if (!after) {
+                if (draggedBadge && draggedBadge.parentElement !== containerEl) containerEl.appendChild(draggedBadge);
+                else if (draggedBadge) containerEl.appendChild(draggedBadge);
+            } else {
+                containerEl.insertBefore(draggedBadge, after);
+            }
+        });
+
+        containerEl.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const newOrder = Array.from(containerEl.querySelectorAll('.field-badge')).map(b => parseInt(b.querySelector('span').dataset.index, 10));
+            const reordered = newOrder.map(i => idElements[i]);
+            idElements = reordered;
+            renderIdElements();
+            updatePreview();
+        });
+    }
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.field-badge')].filter(el => el !== draggedBadge);
+        let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
+        for (const child of draggableElements) {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                closest = { offset: offset, element: child };
+            }
+        }
+        return closest.element;
+    }
+
+    const randHex = (len) => Math.floor(Math.random() * Math.pow(16, len)).toString(16).toUpperCase().padStart(len, '0');
+
+    const randDigits = (len) => Array.from({length: len}, () => Math.floor(Math.random() * 10)).join('');
+
+    function updatePreview() {
+        let preview = '';
+
+        idElements.forEach(el => {
+            switch(el.type) {
+                case 'FixedText':
+                case 0:
+                    preview += el.value;
+                    break;
+                case 'RandomNumbers20Bit':
+                case 1:
+                    preview += randHex(5);
+                    break;
+                case 'RandomNumbers32Bit':
+                case 2:
+                    preview += randHex(8);
+                    break;
+                case 'RandomNumbers6Digit':
+                case 3:
+                    preview += randDigits(6);
+                    break;
+                case 'RandomNumbers9Digit':
+                case 4:
+                    preview += randDigits(9);
+                    break;
+                case 'Guid':
+                case 5:
+                    preview += crypto.randomUUID();
+                    break;
+                case 'DateTime':
+                case 6:
+                    preview += new Date().toISOString().split('T')[0];
+                    break;
+                case 'SequenceNumber':
+                case 7:
+                    const seqLength = parseInt(el.length) || 1;
+                    preview += "1".padStart(seqLength, '0');
+                    break;
+            }
+        });
+
+        document.getElementById('idPreview').textContent = preview || '[No elements]';
+    }
+
+    document.getElementById('addIdElementBtn').addEventListener('click', () => {
+        document.getElementById('addIdElementForm').reset();
+        document.getElementById('valueContainer').style.display = 'none';
+        document.getElementById('lengthContainer').style.display = 'none';
+        addIdElementModal.show();
+    });
+
+    document.getElementById('idElementTypeSelect').addEventListener('change', (e) => {
+        const type = e.target.value;
+        const valueContainer = document.getElementById('valueContainer');
+        const lengthContainer = document.getElementById('lengthContainer');
+
+        valueContainer.style.display = (type === 'FixedText') ? 'block' : 'none';
+        lengthContainer.style.display = (type === 'Guid' || type === 'SequenceNumber') ? 'block' : 'none';
+    });
+
+    document.getElementById('confirmIdElementBtn').addEventListener('click', () => {
+        const type = document.getElementById('idElementTypeSelect').value;
+        if (!type) {
+            alert('Please select a type');
+            return;
+        }
+
+        const element = { type: type };
+
+        if (type === 'FixedText') {
+            const value = document.getElementById('idElementValue').value.trim();
+            if (!value) {
+                alert('Please enter a value for Fixed Text');
+                return;
+            }
+            element.value = value;
+        }
+
+        if (type === 'Guid' || type === 'SequenceNumber') {
+            element.length = parseInt(document.getElementById('idElementLength').value) || 3;
+        }
+
+        idElements.push(element);
+        renderIdElements();
+        addIdElementModal.hide();
+    });
+
+    function getAntiForgeryToken() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    }
+
+    document.getElementById('saveIdFormatBtn').addEventListener('click', async () => {
+        console.log('Saving format:', idElements);
+        console.log('Inventory ID:', inventoryId);
+
+        if (!Array.isArray(idElements) || idElements.length === 0) {
+            alert('Please add at least one element to the format');
+            return;
+        }
+
+        try {
+            const payload = JSON.stringify(idElements);
+            console.log('Payload:', payload);
+
+            const url = '/Inventories/SaveCustomIdFormat?id=' + inventoryId;
+            console.log('Request URL:', url);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getAntiForgeryToken()
+                },
+                body: payload
+            });
+
+            console.log('Response Status:', response.status);
+            console.log('Response URL:', response.url);
+            console.log('Response Headers:', response.headers.get('content-type'));
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Server Error Response:', text);
+                console.error('Status:', response.status);
+                alert('Œ Error ' + response.status + ': Could not save format. Check console for details.');
+                return;
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Invalid content-type:', contentType);
+                alert('Œ Error: Server returned non-JSON response');
+                return;
+            }
+
+            const result = await response.json();
+            console.log('Response:', result);
+
+            if (result.success) {
+                alert('œ… Custom ID format saved successfully!');
+                location.reload();
+            } else {
+                alert('Œ Error: ' + (result.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Œ Error saving format: ' + error.message);
+        }
+    });
+
+    renderIdElements();
+</script>
+
+<link rel="stylesheet" href="~/css/settings.css" />
+
+
+

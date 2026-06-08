@@ -1,4 +1,4 @@
-namespace Inventory_Management_System.Models;
+﻿namespace Inventory_Management_System.Models;
 
 public class InventoryTag
 {
@@ -8,3 +8,4 @@ public class InventoryTag
 
     public virtual Inventory? Inventory { get; set; }
 }
+
